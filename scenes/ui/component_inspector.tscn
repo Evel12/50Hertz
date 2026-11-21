@@ -1,0 +1,141 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" path="res://resources/ui/control_room.tres" id="r1"]
+
+[node name="ComponentInspector" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("r1")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.015, 0.03, 0.05, 0.92)
+
+[node name="Frame" type="PanelContainer" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 70.0
+offset_top = 45.0
+offset_right = -70.0
+offset_bottom = -45.0
+
+[node name="Layout" type="VBoxContainer" parent="Frame"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Frame/Layout"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Frame/Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 27
+text = "Component inspector"
+text_overrun_behavior = 3
+
+[node name="Close" type="Button" parent="Frame/Layout/Header"]
+layout_mode = 2
+text = "Close [Esc]"
+metadata/menu_action = "close"
+
+[node name="Scroll" type="ScrollContainer" parent="Frame/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Body" type="VBoxContainer" parent="Frame/Layout/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Output" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Output and selected path"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Input0" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Input A"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Disconnect0" type="Button" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Disconnect input A"
+metadata/menu_action = "disconnect:0"
+
+[node name="Input1" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Input B"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Disconnect1" type="Button" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Disconnect input B"
+metadata/menu_action = "disconnect:1"
+
+[node name="TimerHelp" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "On-delay uses simulation time. It does not shorten generator startup."
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Delay" type="SpinBox" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+min_value = 0.05
+max_value = 30.0
+step = 0.05
+value = 1.0
+metadata/value_action = "delay"
+
+[node name="ComparatorHelp" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Compare input A against a constant. SUPPLY excludes battery flow."
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Operator" type="OptionButton" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+item_count = 6
+selected = 0
+metadata/value_action = "operator"
+popup/item_0/text = ">"
+popup/item_0/id = 0
+popup/item_1/text = "<"
+popup/item_1/id = 1
+popup/item_2/text = ">="
+popup/item_2/id = 2
+popup/item_3/text = "<="
+popup/item_3/id = 3
+popup/item_4/text = "=="
+popup/item_4/id = 4
+popup/item_5/text = "!="
+popup/item_5/id = 5
+
+[node name="Threshold" type="SpinBox" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+min_value = -10000.0
+max_value = 10000.0
+step = 1.0
+value = 75.0
+metadata/value_action = "threshold"
+
+[node name="Delete" type="Button" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Delete component"
+metadata/menu_action = "delete"

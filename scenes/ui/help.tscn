@@ -1,0 +1,92 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" path="res://resources/ui/control_room.tres" id="r1"]
+
+[node name="Help" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("r1")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.015, 0.03, 0.05, 0.92)
+
+[node name="Frame" type="PanelContainer" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 70.0
+offset_top = 45.0
+offset_right = -70.0
+offset_bottom = -45.0
+
+[node name="Layout" type="VBoxContainer" parent="Frame"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Frame/Layout"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Frame/Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 27
+text = "Field guide / cause → logic → action → consequence"
+text_overrun_behavior = 3
+
+[node name="Close" type="Button" parent="Frame/Layout/Header"]
+layout_mode = 2
+text = "Close [Esc]"
+metadata/menu_action = "close"
+
+[node name="Scroll" type="ScrollContainer" parent="Frame/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Body" type="VBoxContainer" parent="Frame/Layout/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Wiring" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Build while paused. Drag a right output to a left input. Green 1 means true; muted 0 means false. One source can feed many inputs. Disconnect an occupied input before replacing its wire. Inspect can disconnect individual inputs. Delete removes gates; Undo/Redo restores changes."
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Editor" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Middle mouse pans. Graph controls or Ctrl+wheel zoom. Fit frames the circuit. Drag card titles to move. Board provides save/load, snap, clear, starter and reference. Inspect edits timer/comparator settings. Program unlocks in Stage 9."
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Keys" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Space Run/Pause • R Reset • F11 fullscreen • Escape cancel wire / close panel / pause. Step advances 0.05 game seconds. Menus freeze the simulation and restore its prior running state. Reset before a full-day comparison."
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Rules" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "GAME RULES: hydro 45 kW (fault 15), solar 30 (cloud 7; Stage 8:50), backup 30. Demand 75; peak +20; factory 18; mill 12. Battery 1800 EU, 90% efficiency each direction. Charge ≤20 kW from surplus, discharge 24 (Stage 8:30). Safe frequency 49.5–50.5 Hz; five unsafe seconds trips the grid. These are simplified educational rules."
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Semantics" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Unconnected inputs are false/zero. RESET wins. Memory advances only in fixed simulation ticks. Cycles and multiple drivers are rejected. Simultaneous charge/discharge fails. Correct and incorrect controllers can be tested; only connections reaching actuators change equipment."
+autowrap_mode = 3
+size_flags_horizontal = 3

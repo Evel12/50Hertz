@@ -1,0 +1,440 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="r1"]
+
+[ext_resource type="Theme" path="res://resources/ui/control_room.tres" id="r2"]
+
+[ext_resource type="Script" path="res://scripts/ui/equal_split.gd" id="r3"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/village_view.tscn" id="r4"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/logic_editor.tscn" id="r5"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/main_menu.tscn" id="r6"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="r7"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/stage_select.tscn" id="r8"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/settings.tscn" id="r9"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/tutorial.tscn" id="r10"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/board_menu.tscn" id="r11"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/component_inspector.tscn" id="r12"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/script_editor.tscn" id="r13"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/hint.tscn" id="r14"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/comparison.tscn" id="r15"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/upgrades.tscn" id="r16"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/help.tscn" id="r17"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/result_screen.tscn" id="r18"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/demo_complete.tscn" id="r19"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/confirmation.tscn" id="r20"]
+
+[node name="FiftyHertz" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("r1")
+theme = ExtResource("r2")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.035, 0.07, 0.11, 1)
+mouse_filter = 2
+
+[node name="ScreenMargin" type="MarginContainer" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="GameLayout" type="VBoxContainer" parent="ScreenMargin"]
+layout_mode = 2
+unique_name_in_owner = true
+
+[node name="Header" type="HBoxContainer" parent="ScreenMargin/GameLayout"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="GameTitle" type="Label" parent="ScreenMargin/GameLayout/Header"]
+layout_mode = 2
+text = "50 HERTZ"
+theme_override_font_sizes/font_size = 25
+unique_name_in_owner = true
+
+[node name="StageLabel" type="Label" parent="ScreenMargin/GameLayout/Header"]
+layout_mode = 2
+text = "02 / After Sunset"
+theme_override_font_sizes/font_size = 22
+unique_name_in_owner = true
+size_flags_horizontal = 3
+
+[node name="StageStatus" type="Label" parent="ScreenMargin/GameLayout/Header"]
+layout_mode = 2
+text = "NOT CLEARED"
+theme_override_font_sizes/font_size = 17
+modulate = Color(1, 0.80, 0.47, 1)
+
+[node name="TimeLabel" type="Label" parent="ScreenMargin/GameLayout/Header"]
+layout_mode = 2
+text = "07:00 · 0/40s"
+theme_override_font_sizes/font_size = 24
+unique_name_in_owner = true
+
+[node name="FrequencyLabel" type="Label" parent="ScreenMargin/GameLayout/Header"]
+layout_mode = 2
+text = "50.00 Hz"
+theme_override_font_sizes/font_size = 29
+unique_name_in_owner = true
+
+[node name="Toolbar" type="HBoxContainer" parent="ScreenMargin/GameLayout"]
+layout_mode = 2
+
+[node name="RunButton" type="Button" parent="ScreenMargin/GameLayout/Toolbar"]
+layout_mode = 2
+text = "Run [Space]"
+unique_name_in_owner = true
+metadata/action = "run"
+
+[node name="ResetButton" type="Button" parent="ScreenMargin/GameLayout/Toolbar"]
+layout_mode = 2
+text = "Reset [R]"
+unique_name_in_owner = true
+metadata/action = "reset"
+
+[node name="StepButton" type="Button" parent="ScreenMargin/GameLayout/Toolbar"]
+layout_mode = 2
+text = "Step"
+unique_name_in_owner = true
+metadata/action = "step"
+
+[node name="SpeedButton" type="Button" parent="ScreenMargin/GameLayout/Toolbar"]
+layout_mode = 2
+text = "1x"
+unique_name_in_owner = true
+metadata/action = "speed"
+
+[node name="HelpButton" type="Button" parent="ScreenMargin/GameLayout/Toolbar"]
+layout_mode = 2
+text = "Help"
+unique_name_in_owner = true
+metadata/action = "help"
+
+[node name="StagesButton" type="Button" parent="ScreenMargin/GameLayout/Toolbar"]
+layout_mode = 2
+text = "Stages"
+unique_name_in_owner = true
+metadata/action = "stages"
+
+[node name="MenuButton" type="Button" parent="ScreenMargin/GameLayout/Toolbar"]
+layout_mode = 2
+text = "Menu [Esc]"
+unique_name_in_owner = true
+metadata/action = "menu"
+
+[node name="ModelNotice" type="Label" parent="ScreenMargin/GameLayout/Toolbar"]
+layout_mode = 2
+text = "Educational game rules • not engineering simulation"
+theme_override_font_sizes/font_size = 16
+
+[node name="EqualSplit" type="Container" parent="ScreenMargin/GameLayout"]
+layout_mode = 2
+size_flags_vertical = 3
+clip_contents = true
+script = ExtResource("r3")
+
+[node name="VillagePanel" type="PanelContainer" parent="ScreenMargin/GameLayout/EqualSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VillageView" parent="ScreenMargin/GameLayout/EqualSplit/VillagePanel" instance=ExtResource("r4")]
+layout_mode = 2
+unique_name_in_owner = true
+
+[node name="LabPanel" type="PanelContainer" parent="ScreenMargin/GameLayout/EqualSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LabLayout" type="VBoxContainer" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel"]
+layout_mode = 2
+
+[node name="Objective" type="Label" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout"]
+layout_mode = 2
+unique_name_in_owner = true
+text = "NOT\nKeep the village powered after sunset."
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="TutorialLabel" type="Label" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout"]
+layout_mode = 2
+unique_name_in_owner = true
+text = "Place NOT, then wire DAY → NOT → BACKUP."
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="LearningControls" type="HBoxContainer" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout"]
+layout_mode = 2
+
+[node name="TestButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/LearningControls"]
+layout_mode = 2
+unique_name_in_owner = true
+text = "TEST SWITCH: 0"
+metadata/action = "switch"
+
+[node name="PredictionSelect" type="OptionButton" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/LearningControls"]
+layout_mode = 2
+unique_name_in_owner = true
+item_count = 3
+selected = 0
+popup/item_0/text = "Prediction: choose..."
+popup/item_1/text = "At sunset NOT = 0"
+popup/item_2/text = "At sunset NOT = 1"
+
+[node name="HintButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/LearningControls"]
+layout_mode = 2
+text = "Hint"
+metadata/action = "hint"
+
+[node name="TutorialButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/LearningControls"]
+layout_mode = 2
+text = "Tutorial"
+metadata/action = "tutorial"
+
+[node name="CircuitEditor" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout" instance=ExtResource("r5")]
+layout_mode = 2
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 0)
+
+[node name="EditorControls" type="HBoxContainer" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout"]
+layout_mode = 2
+
+[node name="UndoButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/EditorControls"]
+layout_mode = 2
+text = "Undo"
+metadata/action = "undo"
+
+[node name="RedoButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/EditorControls"]
+layout_mode = 2
+text = "Redo"
+metadata/action = "redo"
+
+[node name="FitButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/EditorControls"]
+layout_mode = 2
+text = "Fit"
+metadata/action = "fit"
+
+[node name="BoardButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/EditorControls"]
+layout_mode = 2
+text = "Board…"
+metadata/action = "board"
+
+[node name="InspectorButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/EditorControls"]
+layout_mode = 2
+text = "Inspect"
+metadata/action = "inspect"
+
+[node name="ProgramButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/EditorControls"]
+layout_mode = 2
+text = "Program"
+metadata/action = "program"
+
+[node name="MonitoringControls" type="HBoxContainer" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout"]
+layout_mode = 2
+
+[node name="LogButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/MonitoringControls"]
+layout_mode = 2
+text = "Cause / effect log"
+metadata/action = "log"
+
+[node name="CompareButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/MonitoringControls"]
+layout_mode = 2
+text = "Compare"
+metadata/action = "compare"
+
+[node name="UpgradeButton" type="Button" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout/MonitoringControls"]
+layout_mode = 2
+text = "Upgrades"
+metadata/action = "upgrades"
+
+[node name="EventLog" type="RichTextLabel" parent="ScreenMargin/GameLayout/EqualSplit/LabPanel/LabLayout"]
+layout_mode = 2
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 125)
+bbcode_enabled = true
+scroll_following = true
+
+[node name="StatusLabel" type="Label" parent="ScreenMargin/GameLayout"]
+layout_mode = 2
+unique_name_in_owner = true
+text = "Build, predict, test and observe."
+text_overrun_behavior = 3
+theme_override_font_sizes/font_size = 17
+
+[node name="UIViews" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="main_menu" parent="UIViews" instance=ExtResource("r6")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="pause_menu" parent="UIViews" instance=ExtResource("r7")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="stage_select" parent="UIViews" instance=ExtResource("r8")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="settings" parent="UIViews" instance=ExtResource("r9")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="tutorial" parent="UIViews" instance=ExtResource("r10")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="board_menu" parent="UIViews" instance=ExtResource("r11")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="component_inspector" parent="UIViews" instance=ExtResource("r12")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="script_editor" parent="UIViews" instance=ExtResource("r13")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="hint" parent="UIViews" instance=ExtResource("r14")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="comparison" parent="UIViews" instance=ExtResource("r15")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="upgrades" parent="UIViews" instance=ExtResource("r16")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="help" parent="UIViews" instance=ExtResource("r17")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="result_screen" parent="UIViews" instance=ExtResource("r18")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="demo_complete" parent="UIViews" instance=ExtResource("r19")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false
+
+[node name="confirmation" parent="UIViews" instance=ExtResource("r20")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+visible = false

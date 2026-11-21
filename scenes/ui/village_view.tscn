@@ -1,0 +1,140 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/village_view.gd" id="r1"]
+
+[ext_resource type="Theme" path="res://resources/ui/control_room.tres" id="r2"]
+
+[ext_resource type="Script" path="res://scripts/ui/frequency_chart.gd" id="r3"]
+
+[node name="VillageView" type="Control"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+clip_contents = true
+mouse_filter = 2
+theme = ExtResource("r2")
+script = ExtResource("r1")
+
+[node name="VillageTitle" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.03333333333333333
+anchor_top = 0.0189873417721519
+anchor_right = 0.9666666666666667
+anchor_bottom = 0.05949367088607595
+mouse_filter = 2
+text = "DESA SUKAMAJU / SEBAB AKIBAT"
+theme_override_font_sizes/font_size = 19
+modulate = Color(0.45, 0.84, 0.95, 1)
+
+[node name="CurrentEvent" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.03333333333333333
+anchor_top = 0.5924050632911392
+anchor_right = 0.9666666666666667
+anchor_bottom = 0.6227848101265823
+mouse_filter = 2
+text = "Current event"
+theme_override_font_sizes/font_size = 17
+text_overrun_behavior = 3
+modulate = Color(1, 0.80, 0.47, 1)
+
+[node name="Monitor" type="PanelContainer" parent="."]
+layout_mode = 0
+anchor_left = 0.013333333333333334
+anchor_top = 0.6734177215189873
+anchor_right = 0.9866666666666667
+anchor_bottom = 0.8683544303797468
+mouse_filter = 2
+
+[node name="ChartTitle" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.03333333333333333
+anchor_top = 0.6759493670886076
+anchor_right = 0.9666666666666667
+anchor_bottom = 0.7139240506329114
+mouse_filter = 2
+text = "FREQUENCY HISTORY / SAFE BAND 49.5–50.5 Hz"
+theme_override_font_sizes/font_size = 16
+
+[node name="FrequencyChart" type="Control" parent="."]
+layout_mode = 0
+anchor_left = 0.07777777777777778
+anchor_top = 0.7189873417721518
+anchor_right = 0.9611111111111111
+anchor_bottom = 0.8481012658227848
+mouse_filter = 2
+script = ExtResource("r3")
+
+[node name="Tick505" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.01888888888888889
+anchor_top = 0.7265822784810126
+anchor_right = 0.07444444444444444
+anchor_bottom = 0.7620253164556962
+mouse_filter = 2
+text = "50.5"
+theme_override_font_sizes/font_size = 13
+
+[node name="Tick500" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.01888888888888889
+anchor_top = 0.769620253164557
+anchor_right = 0.07444444444444444
+anchor_bottom = 0.8050632911392405
+mouse_filter = 2
+text = "50.0"
+theme_override_font_sizes/font_size = 13
+
+[node name="Tick495" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.01888888888888889
+anchor_top = 0.8113924050632911
+anchor_right = 0.07444444444444444
+anchor_bottom = 0.8468354430379746
+mouse_filter = 2
+text = "49.5"
+theme_override_font_sizes/font_size = 13
+
+[node name="SupplyDemand" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.02666666666666667
+anchor_top = 0.8734177215189873
+anchor_right = 0.9733333333333334
+anchor_bottom = 0.9177215189873418
+mouse_filter = 2
+text = "SUPPLY 75 kW     DEMAND 75 kW     STRESS 0 / 5s"
+theme_override_font_sizes/font_size = 18
+text_overrun_behavior = 3
+
+[node name="Resources" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.02666666666666667
+anchor_top = 0.9215189873417722
+anchor_right = 0.9733333333333334
+anchor_bottom = 0.959493670886076
+mouse_filter = 2
+text = "Fuel / emissions / starts / shedding"
+theme_override_font_sizes/font_size = 17
+text_overrun_behavior = 3
+
+[node name="Forecast" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.02666666666666667
+anchor_top = 0.9620253164556962
+anchor_right = 0.9733333333333334
+anchor_bottom = 0.9974683544303797
+mouse_filter = 2
+text = "NEXT: preview forecast"
+theme_override_font_sizes/font_size = 15
+text_overrun_behavior = 3
+
+[node name="FlowLegend" type="Label" parent="."]
+layout_mode = 0
+anchor_left = 0.0266666667
+anchor_top = 0.6265822785
+anchor_right = 0.9733333333
+anchor_bottom = 0.6670886076
+mouse_filter = 2
+text = "POWER: cyan source → GRID · green GRID → buildings · amber → battery · dashed = OFF"
+theme_override_font_sizes/font_size = 14
+text_overrun_behavior = 3
+modulate = Color(0.76, 0.91, 0.96, 1)

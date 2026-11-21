@@ -1,0 +1,95 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/circuit_editor.gd" id="r1"]
+
+[ext_resource type="Theme" path="res://resources/ui/control_room.tres" id="r2"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/components/sensor.tscn" id="r3"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/components/output.tscn" id="r4"]
+
+[node name="CircuitEditor" type="VBoxContainer"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(500, 300)
+offset_right = 900.0
+offset_bottom = 650.0
+theme = ExtResource("r2")
+script = ExtResource("r1")
+
+[node name="Palette" type="HFlowContainer" parent="."]
+layout_mode = 2
+
+[node name="NotButton" type="Button" parent="Palette"]
+layout_mode = 2
+text = "+ NOT"
+tooltip_text = "Place NOT"
+metadata/gate_kind = "NOT"
+
+[node name="AndButton" type="Button" parent="Palette"]
+layout_mode = 2
+text = "+ AND"
+tooltip_text = "Place AND"
+metadata/gate_kind = "AND"
+
+[node name="OrButton" type="Button" parent="Palette"]
+layout_mode = 2
+text = "+ OR"
+tooltip_text = "Place OR"
+metadata/gate_kind = "OR"
+
+[node name="XorButton" type="Button" parent="Palette"]
+layout_mode = 2
+text = "+ XOR"
+tooltip_text = "Place XOR"
+metadata/gate_kind = "XOR"
+
+[node name="NandButton" type="Button" parent="Palette"]
+layout_mode = 2
+text = "+ NAND"
+tooltip_text = "Place NAND"
+metadata/gate_kind = "NAND"
+
+[node name="NorButton" type="Button" parent="Palette"]
+layout_mode = 2
+text = "+ NOR"
+tooltip_text = "Place NOR"
+metadata/gate_kind = "NOR"
+
+[node name="LatchButton" type="Button" parent="Palette"]
+layout_mode = 2
+text = "+ LATCH"
+tooltip_text = "Place LATCH"
+metadata/gate_kind = "LATCH"
+
+[node name="TimerButton" type="Button" parent="Palette"]
+layout_mode = 2
+text = "+ TIMER"
+tooltip_text = "Place TIMER"
+metadata/gate_kind = "TIMER"
+
+[node name="CompareButton" type="Button" parent="Palette"]
+layout_mode = 2
+text = "+ COMPARE"
+tooltip_text = "Place COMPARE"
+metadata/gate_kind = "COMPARE"
+
+[node name="CircuitBoard" type="GraphEdit" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 180)
+right_disconnects = true
+snapping_distance = 20
+minimap_enabled = false
+zoom_min = 0.3
+zoom_max = 1.6
+theme_override_constants/port_grab_distance_horizontal = 18
+theme_override_constants/port_grab_distance_vertical = 16
+
+[node name="DayPreview" parent="CircuitBoard" instance=ExtResource("r3")]
+title = "DAY"
+position_offset = Vector2(40, 65)
+
+[node name="BackupPreview" parent="CircuitBoard" instance=ExtResource("r4")]
+title = "BACKUP"
+position_offset = Vector2(600, 65)

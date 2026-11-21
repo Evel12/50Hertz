@@ -1,0 +1,339 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/village/building.tscn" id="1"]
+
+[ext_resource type="PackedScene" path="res://scenes/village/power_flow.tscn" id="2"]
+
+[node name="Stage08_SolarFields" type="Node2D"]
+
+metadata/stage_title = "Solar Fields"
+
+metadata/stage_number = 8
+
+[node name="PowerFlow" parent="." instance=ExtResource("2")]
+
+[node name="Hydro1" parent="." instance=ExtResource("1")]
+
+position = Vector2(569, 266)
+
+role = "HYDRO"
+
+display_name = "Hydro"
+
+appearance = 2
+
+wall_color = Color(0.69, 0.56, 0.47, 1)
+
+roof_color = Color(0.56, 0.29, 0.33999999999999997, 1)
+
+[node name="Solar1" parent="." instance=ExtResource("1")]
+
+position = Vector2(165, 122)
+
+role = "SOLAR"
+
+display_name = "Solar"
+
+appearance = 3
+
+wall_color = Color(0.69, 0.56, 0.47, 1)
+
+roof_color = Color(0.56, 0.37, 0.33999999999999997, 1)
+
+[node name="Battery1" parent="." instance=ExtResource("1")]
+
+position = Vector2(146, 261)
+
+role = "BATTERY"
+
+display_name = "Battery"
+
+appearance = 4
+
+wall_color = Color(0.69, 0.56, 0.47, 1)
+
+roof_color = Color(0.56, 0.44999999999999996, 0.33999999999999997, 1)
+
+[node name="Home1" parent="." instance=ExtResource("1")]
+
+position = Vector2(148, 394)
+
+role = "HOME"
+
+display_name = "Garden Home"
+
+appearance = 0
+
+wall_color = Color(0.69, 0.56, 0.47, 1)
+
+roof_color = Color(0.56, 0.29, 0.33999999999999997, 1)
+
+[node name="Home2" parent="." instance=ExtResource("1")]
+
+position = Vector2(748, 121)
+
+role = "HOME"
+
+display_name = "Tile House"
+
+appearance = 1
+
+wall_color = Color(0.69, 0.56, 0.47, 1)
+
+roof_color = Color(0.56, 0.37, 0.33999999999999997, 1)
+
+[node name="Clinic1" parent="." instance=ExtResource("1")]
+
+position = Vector2(345, 122)
+
+role = "CLINIC"
+
+display_name = "Clinic"
+
+appearance = 2
+
+wall_color = Color(0.69, 0.56, 0.47, 1)
+
+roof_color = Color(0.56, 0.44999999999999996, 0.33999999999999997, 1)
+
+[node name="Water1" parent="." instance=ExtResource("1")]
+
+position = Vector2(344, 262)
+
+role = "WATER"
+
+display_name = "Water"
+
+appearance = 3
+
+wall_color = Color(0.69, 0.56, 0.47, 1)
+
+roof_color = Color(0.56, 0.29, 0.33999999999999997, 1)
+
+[node name="Grid1" parent="." instance=ExtResource("1")]
+
+position = Vector2(450, 260)
+
+role = "GRID"
+
+display_name = "Substation"
+
+appearance = 4
+
+wall_color = Color(0.69, 0.56, 0.47, 1)
+
+roof_color = Color(0.56, 0.37, 0.33999999999999997, 1)
+
+[node name="Roads" type="Node2D" parent="."]
+
+show_behind_parent = true
+
+[node name="Road1" type="Line2D" parent="Roads"]
+
+points = PackedVector2Array(450, 260, 569, 260, 569, 266)
+
+width = 9.0
+
+default_color = Color(0.32, 0.39, 0.34, 1)
+
+[node name="Road2" type="Line2D" parent="Roads"]
+
+points = PackedVector2Array(450, 260, 165, 260, 165, 122)
+
+width = 9.0
+
+default_color = Color(0.32, 0.39, 0.34, 1)
+
+[node name="Road3" type="Line2D" parent="Roads"]
+
+points = PackedVector2Array(450, 260, 146, 260, 146, 261)
+
+width = 9.0
+
+default_color = Color(0.32, 0.39, 0.34, 1)
+
+[node name="Road4" type="Line2D" parent="Roads"]
+
+points = PackedVector2Array(450, 260, 148, 260, 148, 394)
+
+width = 9.0
+
+default_color = Color(0.32, 0.39, 0.34, 1)
+
+[node name="Road5" type="Line2D" parent="Roads"]
+
+points = PackedVector2Array(450, 260, 748, 260, 748, 121)
+
+width = 9.0
+
+default_color = Color(0.32, 0.39, 0.34, 1)
+
+[node name="Road6" type="Line2D" parent="Roads"]
+
+points = PackedVector2Array(450, 260, 345, 260, 345, 122)
+
+width = 9.0
+
+default_color = Color(0.32, 0.39, 0.34, 1)
+
+[node name="Road7" type="Line2D" parent="Roads"]
+
+points = PackedVector2Array(450, 260, 344, 260, 344, 262)
+
+width = 9.0
+
+default_color = Color(0.32, 0.39, 0.34, 1)
+
+[node name="Trees" type="Node2D" parent="."]
+
+[node name="Tree1" type="Polygon2D" parent="Trees"]
+
+position = Vector2(465, 455)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree2" type="Polygon2D" parent="Trees"]
+
+position = Vector2(410, 335)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree3" type="Polygon2D" parent="Trees"]
+
+position = Vector2(475, 205)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree4" type="Polygon2D" parent="Trees"]
+
+position = Vector2(381, 335)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree5" type="Polygon2D" parent="Trees"]
+
+position = Vector2(776, 205)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree6" type="Polygon2D" parent="Trees"]
+
+position = Vector2(123, 205)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree7" type="Polygon2D" parent="Trees"]
+
+position = Vector2(735, 65)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree8" type="Polygon2D" parent="Trees"]
+
+position = Vector2(753, 455)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree9" type="Polygon2D" parent="Trees"]
+
+position = Vector2(81, 455)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree10" type="Polygon2D" parent="Trees"]
+
+position = Vector2(763, 205)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree11" type="Polygon2D" parent="Trees"]
+
+position = Vector2(86, 335)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree12" type="Polygon2D" parent="Trees"]
+
+position = Vector2(91, 335)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree13" type="Polygon2D" parent="Trees"]
+
+position = Vector2(227, 455)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree14" type="Polygon2D" parent="Trees"]
+
+position = Vector2(726, 455)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree15" type="Polygon2D" parent="Trees"]
+
+position = Vector2(225, 65)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree16" type="Polygon2D" parent="Trees"]
+
+position = Vector2(449, 65)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree17" type="Polygon2D" parent="Trees"]
+
+position = Vector2(681, 455)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree18" type="Polygon2D" parent="Trees"]
+
+position = Vector2(184, 65)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)
+
+[node name="Tree19" type="Polygon2D" parent="Trees"]
+
+position = Vector2(76, 205)
+
+polygon = PackedVector2Array(-8, 6, 0, -13, 8, 6)
+
+color = Color(0.18, 0.43, 0.29, 1)

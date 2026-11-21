@@ -1,0 +1,118 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" path="res://resources/ui/control_room.tres" id="r1"]
+
+[node name="ResultScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("r1")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.015, 0.03, 0.05, 0.92)
+
+[node name="Frame" type="PanelContainer" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 70.0
+offset_top = 45.0
+offset_right = -70.0
+offset_bottom = -45.0
+
+[node name="Layout" type="VBoxContainer" parent="Frame"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Frame/Layout"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Frame/Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 27
+text = "Test result"
+text_overrun_behavior = 3
+
+[node name="Close" type="Button" parent="Frame/Layout/Header"]
+layout_mode = 2
+text = "Close [Esc]"
+metadata/menu_action = "close"
+
+[node name="Scroll" type="ScrollContainer" parent="Frame/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Body" type="VBoxContainer" parent="Frame/Layout/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="ClearBanner" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "STAGE CLEARED!"
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 32
+modulate = Color(0.29, 0.88, 0.63, 1)
+
+[node name="ProgressionInfo" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "The next stage is unlocked. Continue when ready."
+autowrap_mode = 3
+
+[node name="Next" type="Button" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Next Stage"
+metadata/menu_action = "next"
+
+[node name="Explanation" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Cause → logic → action → consequence"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Metrics" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Run metrics"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Optional" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Optional objectives"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Prediction" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Prediction result"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Retry" type="Button" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Retry / optimize (preserve circuit)"
+metadata/menu_action = "retry"
+
+[node name="Edit" type="Button" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Return to editing"
+metadata/menu_action = "close"
+
+[node name="Hint" type="Button" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Hint"
+metadata/menu_action = "hint"

@@ -1,0 +1,35 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" path="res://resources/ui/control_room.tres" id="r1"]
+
+[node name="XorCard" type="GraphNode"]
+title = "XOR"
+custom_minimum_size = Vector2(180, 0)
+theme = ExtResource("r1")
+theme_override_font_sizes/title_font_size = 20
+theme_override_colors/title_color = Color(0.29, 0.88, 0.63, 1)
+metadata/kind = "XOR"
+slot/0/left_enabled = true
+slot/0/left_type = 0
+slot/0/left_color = Color(0.45, 0.84, 0.95, 1)
+slot/0/right_enabled = true
+slot/0/right_type = 0
+slot/0/right_color = Color(0.29, 0.88, 0.63, 1)
+slot/1/left_enabled = true
+slot/1/left_type = 0
+slot/1/left_color = Color(0.45, 0.84, 0.95, 1)
+slot/1/right_enabled = false
+slot/1/right_type = 0
+slot/1/right_color = Color(0.29, 0.88, 0.63, 1)
+
+[node name="Signal" type="Label" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(155, 30)
+theme_override_font_sizes/font_size = 19
+text = "A: 0 | OUT: 0"
+
+[node name="SignalB" type="Label" parent="."]
+layout_mode = 2
+custom_minimum_size = Vector2(155, 30)
+theme_override_font_sizes/font_size = 19
+text = "B: 0 | OUT: 0"

@@ -1,0 +1,13 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+STAGE 01 pass=true time=12.00 freq=50.0000 fuel=0.0 starts=0 battery=1200.0 shed=0.0
+STAGE 02 pass=true time=40.00 freq=50.0000 fuel=660.0 starts=1 battery=1200.0 shed=0.0
+STAGE 03 pass=true time=50.00 freq=50.0000 fuel=900.0 starts=2 battery=1200.0 shed=0.0
+STAGE 04 pass=true time=65.00 freq=50.0000 fuel=600.0 starts=1 battery=800.0 shed=0.0
+STAGE 05 pass=true time=75.00 freq=50.0000 fuel=1462.5 starts=3 battery=1200.0 shed=0.0
+STAGE 06 pass=true time=65.00 freq=50.0000 fuel=1621.5 starts=1 battery=1200.0 shed=0.0
+STAGE 07 pass=true time=105.00 freq=50.0000 fuel=2100.0 starts=2 battery=1200.0 shed=40.0
+STAGE 08 pass=true time=100.00 freq=50.0000 fuel=0.0 starts=0 battery=3.3 shed=0.0
+STAGE 09 pass=true time=90.00 freq=50.0000 fuel=1650.0 starts=2 battery=800.0 shed=0.0
+STAGE 10 pass=true time=125.00 freq=50.0000 fuel=2941.5 starts=1 battery=400.0 shed=65.0
+RESULT: 187/187 passed; 0 failures

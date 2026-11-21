@@ -1,0 +1,104 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" path="res://resources/ui/control_room.tres" id="r1"]
+
+[node name="Comparison" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("r1")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.015, 0.03, 0.05, 0.92)
+
+[node name="Frame" type="PanelContainer" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 70.0
+offset_top = 45.0
+offset_right = -70.0
+offset_bottom = -45.0
+
+[node name="Layout" type="VBoxContainer" parent="Frame"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Frame/Layout"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Frame/Layout/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 27
+text = "Controlled experiment / same timeline"
+text_overrun_behavior = 3
+
+[node name="Close" type="Button" parent="Frame/Layout/Header"]
+layout_mode = 2
+text = "Close [Esc]"
+metadata/menu_action = "close"
+
+[node name="Scroll" type="ScrollContainer" parent="Frame/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Body" type="VBoxContainer" parent="Frame/Layout/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="Empty" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Reset after a test, change one connection and compare the next run."
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Frequency" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Frequency"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Fuel" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Fuel"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Outages" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Outages"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Starts" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Starts"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Shedding" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Shedding"
+autowrap_mode = 3
+size_flags_horizontal = 3
+
+[node name="Details" type="Label" parent="Frame/Layout/Scroll/Body"]
+layout_mode = 2
+text = "Run duration, circuit changes and equipment changes"
+autowrap_mode = 3
+size_flags_horizontal = 3

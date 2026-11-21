@@ -1,0 +1,46 @@
+[gd_resource type="Theme" load_steps=5 format=3]
+[sub_resource type="StyleBoxFlat" id="Panel"]
+bg_color = Color(0.063, 0.133, 0.192, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.33, 0.41, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+[sub_resource type="StyleBoxFlat" id="Normal"]
+bg_color = Color(0.125, 0.224, 0.294, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_left = 6
+corner_radius_bottom_right = 6
+content_margin_left = 10.0
+content_margin_top = 9.0
+content_margin_right = 10.0
+content_margin_bottom = 9.0
+[sub_resource type="StyleBoxFlat" id="Hover"]
+bg_color = Color(0.19, 0.33, 0.42, 1)
+content_margin_left = 10.0
+content_margin_top = 9.0
+content_margin_right = 10.0
+content_margin_bottom = 9.0
+[sub_resource type="StyleBoxFlat" id="Pressed"]
+bg_color = Color(0.14, 0.37, 0.31, 1)
+content_margin_left = 10.0
+content_margin_top = 9.0
+content_margin_right = 10.0
+content_margin_bottom = 9.0
+[resource]
+default_font_size = 18
+PanelContainer/styles/panel = SubResource("Panel")
+Button/styles/normal = SubResource("Normal")
+Button/styles/hover = SubResource("Hover")
+Button/styles/pressed = SubResource("Pressed")
+Label/colors/font_color = Color(0.90, 0.95, 0.97, 1)
+Button/colors/font_color = Color(0.90, 0.95, 0.97, 1)
