@@ -46,7 +46,7 @@ static func get_levels() -> Array[Dictionary]:
 			"has_rain": false,
 			"has_clouds": false,
 			"has_rice_mill": false,
-			"hint_fail": "Rangkaianmu bikin diesel nyala waktu SIANG (boros!) dan mati waktu malam (gelap) — kebalikannya! Klik gerbang KABEL di panel relai lalu ganti menjadi NOT.",
+			"hint_fail": "Tarik NOT dari tray bawah ke papan. Hubungkan SIANG ke masukan NOT, lalu keluaran NOT ke DIESEL. Diesel harus menyala ketika sudah tidak siang.",
 			"win_explanation": "Pasokan harus selalu sama dengan beban (P_pasokan = P_beban → 50.00 Hz). Saat matahari terbenam, PLTS hilang padahal beban malam naik. Gerbang NOT SIANG berarti \"kalau sudah tidak siang\", sehingga diesel menyala menutup kekurangan tepat waktu."
 		},
 		{
@@ -89,7 +89,7 @@ static func get_levels() -> Array[Dictionary]:
 			"has_rain": false,
 			"has_clouds": true,
 			"has_rice_mill": true,
-			"hint_fail": "Saat awan tebal menutupi matahari di siang hari, PLTS turun drastis padahal SIANG masih 1. Klik gerbang NOT → ganti menjadi OR, lalu klik SIANG → sisipkan NOT, dan isi input kedua dengan sensor MENDUNG!",
+			"hint_fail": "Gunakan NOT untuk membalik SIANG. Hubungkan NOT(SIANG) dan MENDUNG ke dua masukan OR, lalu keluaran OR ke DIESEL.",
 			"win_explanation": "Energi surya bersifat intermiten: daya PLTS bisa turun 85% dalam beberapa menit saat awan lewat. Persamaan Boole (NOT SIANG) OR MENDUNG memastikan pembangkit cadangan langsung mengambil alih baik saat cuaca mendung siang hari maupun saat malam."
 		},
 		{
@@ -131,7 +131,7 @@ static func get_levels() -> Array[Dictionary]:
 			"has_rain": true,
 			"has_clouds": true,
 			"has_rice_mill": false,
-			"hint_fail": "Begitu diesel nyala, frekuensi naik di atas 49.8 Hz → F_RENDAH jadi 0 → diesel mati → frekuensi anjlok lagi (chattering!). Ganti KABEL menjadi LATCH dengan S = F_RENDAH dan R = F_TINGGI.",
+			"hint_fail": "Gunakan LATCH agar diesel tidak berkedip mengikuti sensor. Hubungkan F_RENDAH ke pin S, F_TINGGI ke pin R, dan keluaran Q ke DIESEL.",
 			"win_explanation": "Ini disebut Histeresis: batas menyalakan (49.8 Hz) dibuat berbeda dari batas mematikan (50.2 Hz) menggunakan memori SR LATCH. Prinsip yang sama dipakai pada termostat AC, kulkas, dan relai proteksi PLN supaya mesin tidak rusak karena on-off setiap detik."
 		},
 		{
@@ -174,7 +174,7 @@ static func get_levels() -> Array[Dictionary]:
 			"has_rain": false,
 			"has_clouds": false,
 			"has_rice_mill": false,
-			"hint_fail": "Pada jalur PADAM DUSUN 3: ganti KABEL menjadi LATCH. Klik pin S (atas) lalu sisipkan gerbang AND dengan input F_RENDAH dan DIESEL_PENUH. Isi pin R (bawah) dengan F_TINGGI agar Dusun 3 menyala lagi setelah sahur!",
+			"hint_fail": "Pada jalur PADAM Dusun 3, gunakan LATCH. Pin S diisi keluaran AND(F_RENDAH, DIESEL_PENUH), pin R diisi F_TINGGI. Hubungkan Q ke PADAM agar relai tidak berkedip dan Dusun 3 menyala kembali setelah sahur.",
 			"win_explanation": "Ini disebut Under-Frequency Load Shedding (UFLS) — prosedur nyata yang digunakan PLN! Satu langkah kecil melepas sebagian beban non-kritis (Dusun 3) menyelamatkan seluruh desa, Puskesmas, dan Masjid dari pemadaman total (cascading blackout)."
 		}
 	]

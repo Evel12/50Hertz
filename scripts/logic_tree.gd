@@ -116,19 +116,31 @@ static func evaluate(node: Dictionary, sensors: Dictionary, update_latches: bool
 
 
 static func count_gates(node: Dictionary) -> int:
+	return _count_gates(node, {})
+
+
+static func count_circuit_gates(roots: Array) -> int:
+	var visited: Dictionary = {}
+	var total := 0
+	for root in roots:
+		total += _count_gates(root, visited)
+	return total
+
+
+static func _count_gates(node: Dictionary, visited: Dictionary) -> int:
 	if node.is_empty():
 		return 0
-	var ntype: String = String(node.get("type", "SENSOR"))
-	var cnt: int = 0
-	if ntype == "NOT" or ntype == "AND" or ntype == "OR" or ntype == "LATCH":
-		cnt = 1
-	var a_node: Dictionary = node.get("a", {})
-	var b_node: Dictionary = node.get("b", {})
-	if not a_node.is_empty():
-		cnt += count_gates(a_node)
-	if not b_node.is_empty():
-		cnt += count_gates(b_node)
-	return cnt
+	# A component can drive several inputs on the free canvas; count it once.
+	if node.has("_graph_id"):
+		var id := int(node["_graph_id"])
+		if visited.has(id):
+			return 0
+		visited[id] = true
+	var kind := String(node.get("type", "SENSOR"))
+	var total := 1 if kind in ["NOT", "AND", "OR", "LATCH"] else 0
+	total += _count_gates(node.get("a", {}), visited)
+	total += _count_gates(node.get("b", {}), visited)
+	return total
 
 
 static func get_depth(node: Dictionary) -> int:

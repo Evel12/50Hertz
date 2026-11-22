@@ -464,10 +464,10 @@ static func format_time(total_mins: int) -> String:
 
 
 func count_total_gates() -> int:
-	var total: int = LT.count_gates(diesel_tree)
+	var roots: Array = [diesel_tree]
 	if bool(current_level.get("has_shed_actuator", false)):
-		total += LT.count_gates(shed_tree)
-	return total
+		roots.append(shed_tree)
+	return LT.count_circuit_gates(roots)
 
 
 func _emit_state() -> void:
