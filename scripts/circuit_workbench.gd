@@ -17,6 +17,7 @@ signal expansion_requested()
 var level_dict: Dictionary = {}
 var diesel_tree: Dictionary = {}
 var shed_tree: Dictionary = {}
+var output_trees: Dictionary = {}
 var graph_model = Model.new()
 var graph_view: GraphEdit
 var graph_nodes: Dictionary = {}
@@ -29,6 +30,9 @@ var redo_button: Button
 var delete_button: Button
 var is_locked := false
 var expanded := false
+var minimized := false
+var _minimized_view: Dictionary = {}
+var _minimized_connections: Array = []
 var latest_sensors: Dictionary = {}
 var undo_stack: Array[Dictionary] = []
 var redo_stack: Array[Dictionary] = []
@@ -164,7 +168,7 @@ func _build_controls() -> void:
 	status_label = Label.new()
 	status_label.anchor_right = 1
 	status_label.offset_left = 218
-	status_label.offset_right = -18
+	status_label.offset_right = -60
 	status_label.offset_top = 11
 	status_label.offset_bottom = 35
 	status_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -200,10 +204,19 @@ func setup_workbench(lvl: Dictionary, d_tree: Dictionary, s_tree: Dictionary) ->
 	set_locked(false)
 	if preserve:
 		return
-	graph_model.import_trees(diesel_tree, shed_tree, bool(lvl.get("has_shed_actuator", false)))
+	graph_model.allowed_gates = lvl.get("available_gates", [])
+	graph_model.allowed_sensors = lvl.get("available_sensors", [])
+	graph_model.required_outputs = lvl.get("outputs", [])
+	if lvl.has("outputs"):
+		graph_model.import_outputs(lvl["outputs"], lvl.get("saved_outputs", {}))
+	else:
+		graph_model.import_trees(diesel_tree, shed_tree, bool(lvl.get("has_shed_actuator", false)))
+	output_trees = graph_model.compile_trees().get("outputs", {})
 	undo_stack.clear()
 	redo_stack.clear()
 	_views.clear()
+	_minimized_view.clear()
+	_minimized_connections.clear()
 	_build_palette()
 	_rebuild_graph()
 	call_deferred("fit_view")
@@ -243,9 +256,16 @@ func _palette_button(kind: String, sensor: String) -> void:
 	for color in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color", "font_focus_color", "font_disabled_color"]:
 		item.add_theme_color_override(color, Color.TRANSPARENT)
 	item.pressed.connect(func():
-		_on_component_dropped(item.component_data, (graph_view.scroll_offset + graph_view.size * 0.5) / graph_view.zoom)
+		var at := (graph_view.scroll_offset + graph_view.size * 0.5) / graph_view.zoom
+		if int(level_dict.get("id",-1))==0:
+			at = Vector2(230,115) if kind=="SENSOR" else Vector2(470,102)
+		_on_component_dropped(item.component_data,at)
+		if int(level_dict.get("id",-1))==0: call_deferred("fit_view")
 	)
 	palette.add_child(item)
+	if kind != "SENSOR" and not kind in level_dict.get("available_gates", []):
+		item.disabled = true
+		item.tooltip_text = "%s: selesai Stage %d; mungkin dibatasi pada misi ini." % [kind, {"NOT":1,"OR":2,"AND":3,"XOR":4,"LATCH":8,"NAND":16,"NOR":17}.get(kind,0)]
 
 
 func _rebuild_graph() -> void:
@@ -338,6 +358,7 @@ func _commit_graph(rebuild_nodes: bool = true) -> void:
 	var compiled: Dictionary = graph_model.compile_trees()
 	diesel_tree = compiled["diesel"]
 	shed_tree = compiled["shed"]
+	output_trees = compiled.get("outputs", {})
 	if rebuild_nodes:
 		if not _rebuild_queued:
 			_rebuild_queued = true
@@ -418,6 +439,9 @@ func _history_step(source: Array[Dictionary], target: Array[Dictionary]) -> void
 
 
 func can_simulate() -> bool:
+	if level_dict.has("outputs") and output_trees.size() != level_dict["outputs"].size():
+		show_message("Semua keluaran wajib harus terhubung.", true)
+		return false
 	var problem: String = graph_model.validation_message()
 	if not problem.is_empty():
 		show_message(problem, true)
@@ -434,7 +458,7 @@ func set_locked(locked: bool) -> void:
 	for view in graph_nodes.values():
 		view.draggable = not locked
 	for item in palette.get_children():
-		item.disabled = locked
+		item.disabled = locked or (item.component_data["kind"] != "SENSOR" and not item.component_data["kind"] in level_dict.get("available_gates", []))
 	_update_buttons()
 	_update_help()
 
@@ -443,6 +467,34 @@ func close_picker() -> void:
 	# Called by the main controller when hiding the drawer.
 	if graph_view != null:
 		graph_view.cancel_connection_drag()
+
+
+func set_minimized(value: bool) -> void:
+	if minimized==value: return
+	if value:
+		_minimized_view = {"zoom":graph_view.zoom,"scroll":graph_view.scroll_offset}
+		_minimized_connections = graph_view.get_connection_list()
+		# Hidden GraphNodes discard their port cache. Reconnect after they are visible.
+		graph_view.clear_connections()
+	minimized = value
+	graph_view.visible = not value
+	bottom_dock.visible = not value
+	status_label.visible = not value
+	if not value: call_deferred("_restore_minimized_view")
+	queue_redraw()
+
+
+func _restore_minimized_view() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if minimized or _minimized_view.is_empty(): return
+	graph_view.zoom = _minimized_view["zoom"]
+	await get_tree().process_frame
+	if not minimized: graph_view.scroll_offset = _minimized_view["scroll"]
+	if not minimized:
+		for cable in _minimized_connections:
+			graph_view.connect_node(cable["from_node"],cable["from_port"],cable["to_node"],cable["to_port"])
+		_minimized_connections.clear()
 
 
 func set_expanded(value: bool) -> void:
@@ -493,6 +545,8 @@ func update_from_sim(state: Dictionary) -> void:
 
 
 func _refresh_signals() -> void:
+	if _rebuild_queued or _rebuilding:
+		return
 	if graph_view == null:
 		return
 	var values: Dictionary = {}
@@ -535,12 +589,12 @@ func _update_help() -> void:
 	if status_label == null:
 		return
 	status_label.text = "Simulasi aktif - pan & zoom tersedia" if is_locked else "Hubungkan sensor, gerbang, dan keluaran."
-	status_label.tooltip_text = "Tarik komponen dari bar bawah. Tarik output ke input untuk memasang kabel. Scroll: zoom. MMB / Spasi+drag: geser. Ctrl+Z / Ctrl+Y: undo / redo."
+	status_label.tooltip_text = "Tarik komponen dari bar bawah. Tarik output ke input untuk memasang kabel. Scroll: zoom. Klik kiri + tarik area kosong / MMB / Spasi+drag: geser. Ctrl+Z / Ctrl+Y: undo / redo."
 	status_label.add_theme_color_override("font_color", UI.MUTED)
 
 
 func _draw() -> void:
-	draw_style_box(CircuitSkin.board_frame(), Rect2(Vector2.ZERO, size))
+	draw_style_box(UI.frame(UI.PANEL,10,6) if minimized else CircuitSkin.board_frame(), Rect2(Vector2.ZERO, size))
 
 
 static func draw_gate_symbol(canvas: CanvasItem, rect: Rect2, gate_type: String, is_high: bool, is_hov: bool) -> void:

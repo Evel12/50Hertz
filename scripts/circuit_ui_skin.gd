@@ -10,8 +10,16 @@ const GATES := {
 	"AND": [preload("res://assetsui/Logic Gates/39.png"), preload("res://assetsui/Logic Gates/40.png")],
 	"OR": [preload("res://assetsui/Logic Gates/41.png"), preload("res://assetsui/Logic Gates/42.png")],
 	"NOT": [preload("res://assetsui/Logic Gates/43.png"), preload("res://assetsui/Logic Gates/44.png")],
+	"XOR": [preload("res://assetsui/Logic Gates/45.png"), preload("res://assetsui/Logic Gates/46.png")],
+	"NAND": [preload("res://assetsui/Logic Gates/47.png"), preload("res://assetsui/Logic Gates/48.png")],
+	"NOR": [preload("res://assetsui/Logic Gates/49.png"), preload("res://assetsui/Logic Gates/50.png")],
 	# Group 41 is the complete selected export, including the Vector 94 yellow contour.
 	"LATCH": [preload("res://assetsui/Group 40.png"), preload("res://assetsui/Group 41.png")],
+}
+const GROUPS := {
+	"XOR": [preload("res://assetsui/Logic Gates/Group 21.png"), preload("res://assetsui/Logic Gates/Group 29.png")],
+	"NAND": [preload("res://assetsui/Logic Gates/Group 22.png"), preload("res://assetsui/Logic Gates/Group 30.png")],
+	"NOR": [preload("res://assetsui/Logic Gates/Group 23.png"), preload("res://assetsui/Logic Gates/Group 31.png")],
 }
 const SIGNAL_ON := Color("ffde54")
 const SIGNAL_OFF := Color("a0d2e7")
@@ -116,6 +124,10 @@ static func output_pin(rect: Rect2) -> Vector2:
 
 
 static func gate(canvas: CanvasItem, rect: Rect2, gate_type: String, high: bool, hovered: bool, input_a: bool = false, input_b: bool = false) -> void:
+	if GROUPS.has(gate_type):
+		var texture: Texture2D = GROUPS[gate_type][1 if high or hovered else 0]
+		canvas.draw_texture_rect(texture, fit_rect(texture, rect), false)
+		return
 	if gate_type == "WIRE":
 		var texture: Texture2D = WIRE[1 if high else 0]
 		canvas.draw_texture_rect(texture, fit_rect(texture, rect), false)
@@ -165,3 +177,28 @@ static func icon(gate_type: String) -> Texture2D:
 		image.resize(maxi(1, roundi(image.get_width() * factor)), maxi(1, roundi(image.get_height() * factor)), Image.INTERPOLATE_NEAREST)
 		_icons[gate_type] = ImageTexture.create_from_image(image)
 	return _icons[gate_type]
+
+static func preview_geometry(rect: Rect2, kind: String) -> Dictionary:
+	var body := Rect2(rect.position+Vector2(32,0),rect.size-Vector2(64,0))
+	if GATES.has(kind): body = fit_rect(GATES[kind][0],body)
+	var unary := kind in ["WIRE","NOT"]
+	return {"body":body,"a":Vector2(rect.position.x+5,body.position.y+body.size.y*(0.5 if unary else 0.26)),"b":Vector2(rect.position.x+5,body.position.y+body.size.y*0.73),"q":Vector2(rect.end.x-5,body.get_center().y)}
+
+static func connected_preview(canvas: CanvasItem, rect: Rect2, kind: String, high: bool, hovered: bool, input_a: bool = false, input_b: bool = false) -> void:
+	var geometry := preview_geometry(rect,kind)
+	var body: Rect2 = geometry["body"]
+	var pin_a: Vector2 = geometry["a"]
+	var pin_b: Vector2 = geometry["b"]
+	var pin_q: Vector2 = geometry["q"]
+	if kind == "WIRE":
+		canvas.draw_line(pin_a,pin_q,SIGNAL_ON if high else SIGNAL_OFF,3)
+	else:
+		# Leads enter the actual fitted artwork; its filled body covers the inner ends.
+		canvas.draw_line(pin_a,Vector2(body.get_center().x,pin_a.y),SIGNAL_ON if input_a else SIGNAL_OFF,3)
+		if kind != "NOT": canvas.draw_line(pin_b,Vector2(body.get_center().x,pin_b.y),SIGNAL_ON if input_b else SIGNAL_OFF,3)
+		canvas.draw_line(body.get_center(),pin_q,SIGNAL_ON if high else SIGNAL_OFF,3)
+		if GATES.has(kind):
+			canvas.draw_texture_rect(GATES[kind][1 if high or hovered else 0],body,false)
+	port(canvas,pin_a,input_a,12)
+	if kind not in ["WIRE","NOT"]: port(canvas,pin_b,input_b,12)
+	port(canvas,pin_q,high,12)

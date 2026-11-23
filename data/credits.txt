@@ -1,0 +1,85 @@
+50 HERTZ — DESA SUKAMAJU
+Game edukasi logika dan pengelolaan listrik desa.
+
+ASET VISUAL DAN FONT
+Kenney: Tiny Town, Tiny City, Tiny Factory, Smoke Particles.
+Sumber: https://kenney.nl
+UI dan ilustrasi: aset antarmuka proyek 50 Hertz.
+Font: Press Start 2P — CodeMan38, SIL Open Font License.
+
+ENGINE
+Godot Engine 4.7.2 — MIT License.
+https://godotengine.org
+
+ATRIBUSI AUDIO
+
+1. KENNEY — INTERFACE SOUNDS
+
+Pembuat: Kenney (kenney.nl)
+Paket: Interface Sounds
+Sumber: https://kenney.nl/assets/interface-sounds
+Lisensi: Creative Commons CC0 1.0 (Public Domain)
+
+2. PIXABAY
+
+Lisensi: Pixabay Content License
+Sumber: https://pixabay.com
+
+Glitch Effect - 1
+Pembuat: DRAGON-STUDIO
+
+Glitch sfx
+Pembuat: Kave_msri (aka Kakaist)
+
+Glitch Sound Effect HD
+Pembuat: Virtual_Vibes
+
+Rain sound
+Pembuat: boons_freak
+
+LIGHT RAIN
+Pembuat: Liecio
+
+Wind Gust
+Pembuat: DRAGON-STUDIO
+
+Wind Blowing
+Pembuat: SoundReality
+
+Soft Wind
+Pembuat: storegraphic
+
+3. MIXKIT
+
+Sumber: https://mixkit.co
+Efek suara: Sound Effects — Free License
+Musik: Stock Music — Free License
+Halaman lisensi: https://mixkit.co/license/
+
+EFEK SUARA — Sound Effects Free License
+
+Birds chirping near the river
+
+Natural ambience with flowing water and birds
+
+Summer night in the forest
+
+Arcade retro game over
+
+Retro game notification
+
+MUSIK — Stock Music Free License
+
+Beautiful dream
+
+Discover
+
+Dry gin
+
+Games worldbeat
+
+Pop 05
+
+Sleepy cat
+
+Terima kasih kepada seluruh pembuat aset dan pemain yang menjaga Desa Sukamaju!

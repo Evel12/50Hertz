@@ -5,6 +5,10 @@ const LT := preload("res://scripts/logic_tree.gd")
 var nodes: Dictionary = {}
 var next_id := 1
 var last_error := ""
+var import_memo: Dictionary = {}
+var allowed_gates: Array = []
+var allowed_sensors: Array = []
+var required_outputs: Array = []
 
 
 func add_component(kind: String, sensor: String, at: Vector2) -> int:
@@ -17,16 +21,17 @@ func add_component(kind: String, sensor: String, at: Vector2) -> int:
 func input_count(id: int) -> int:
 	match String(nodes[id]["kind"]):
 		"SENSOR": return 0
-		"AND", "OR", "LATCH": return 2
+		"AND", "OR", "XOR", "NAND", "NOR", "LATCH": return 2
 		_: return 1
 
 
 func is_actuator(id: int) -> bool:
-	return String(nodes[id]["kind"]) in ["DIESEL", "PADAM"]
+	return String(nodes[id]["kind"]) in ["DIESEL", "PADAM", "OUTPUT"]
 
 
 func import_trees(diesel: Dictionary, shed: Dictionary, has_shed: bool) -> void:
 	nodes.clear()
+	import_memo.clear()
 	next_id = 1
 	var diesel_id := add_component("DIESEL", "", Vector2(660, 70))
 	var source := _import_node(diesel, Vector2(400, 70), maxi(2, LT.get_depth(diesel)))
@@ -48,7 +53,12 @@ func _import_node(tree: Dictionary, at: Vector2, depth: int) -> int:
 		return _import_node(tree.get("a", {}), at - Vector2(220, 0), depth - 1)
 	if kind == "SENSOR" and String(tree.get("sensor", "NONE")) == "NONE":
 		return 0
+	var shared_id := int(tree.get("_graph_id", -1))
+	if shared_id >= 0 and import_memo.has(shared_id):
+		return int(import_memo[shared_id])
 	var id := add_component(kind, String(tree.get("sensor", "NONE")), at)
+	if shared_id >= 0:
+		import_memo[shared_id] = id
 	nodes[id]["runtime"] = tree
 	if kind != "SENSOR":
 		var spread := 62.0 * maxi(1, LT.get_leaf_count(tree)) / 2.0
@@ -123,6 +133,23 @@ func is_complete(id: int, visited: Dictionary = {}) -> bool:
 
 
 func validation_message() -> String:
+	var outputs_seen: Dictionary = {}
+	for component in nodes.values():
+		if component["kind"] == "OUTPUT":
+			var label := String(component["sensor"])
+			if outputs_seen.has(label): return "Satu keluaran tidak boleh memiliki dua pengendali."
+			outputs_seen[label] = true
+	if not required_outputs.is_empty():
+		for output in required_outputs:
+			if not outputs_seen.has(output): return "Keluaran wajib hilang: " + str(output)
+		for output in outputs_seen:
+			if not output in required_outputs: return "Keluaran tidak tersedia pada misi ini."
+	for component in nodes.values():
+		var kind := String(component["kind"])
+		if kind == "SENSOR" and not allowed_sensors.is_empty() and not component["sensor"] in allowed_sensors:
+			return "Sensor tidak tersedia pada misi ini."
+		if kind != "SENSOR" and not kind in ["OUTPUT", "DIESEL", "PADAM"] and not allowed_gates.is_empty() and not kind in allowed_gates:
+			return "Gerbang %s terkunci / tidak diizinkan pada misi ini." % kind
 	for id in nodes:
 		if is_actuator(id) and not is_complete(id):
 			return "Lengkapi kabel input menuju %s sebelum Jalankan." % String(nodes[id]["kind"])
@@ -132,7 +159,7 @@ func validation_message() -> String:
 func compile_trees() -> Dictionary:
 	for component in nodes.values():
 		component["runtime"] = {}
-	var result := {"diesel": {}, "shed": {}}
+	var result := {"diesel": {}, "shed": {}, "outputs": {}}
 	var memo: Dictionary = {}
 	for id in nodes:
 		if not is_actuator(id):
@@ -140,6 +167,8 @@ func compile_trees() -> Dictionary:
 		var key := "diesel" if nodes[id]["kind"] == "DIESEL" else "shed"
 		if is_complete(id):
 			result[key] = _compile_node(int(nodes[id]["inputs"][0]), memo)
+			if nodes[id]["kind"] == "OUTPUT":
+				result["outputs"][nodes[id]["sensor"]] = result[key]
 		else:
 			result[key] = LT.make_sensor("NONE")
 	return result
@@ -170,7 +199,7 @@ func value(id: int, sensors: Dictionary, memo: Dictionary) -> bool:
 		high = bool(sensors.get(String(component["sensor"]), false))
 	elif not is_complete(id):
 		high = false
-	elif kind == "LATCH":
+	elif kind in ["LATCH"]:
 		high = bool(component["runtime"].get("val", false))
 	else:
 		var a := value(int(component["inputs"][0]), sensors, memo)
@@ -178,6 +207,9 @@ func value(id: int, sensors: Dictionary, memo: Dictionary) -> bool:
 			"NOT": high = not a
 			"AND": high = a and value(int(component["inputs"][1]), sensors, memo)
 			"OR": high = a or value(int(component["inputs"][1]), sensors, memo)
+			"XOR": high = a != value(int(component["inputs"][1]), sensors, memo)
+			"NAND": high = not (a and value(int(component["inputs"][1]), sensors, memo))
+			"NOR": high = not (a or value(int(component["inputs"][1]), sensors, memo))
 			_: high = a
 	memo[id] = high
 	return high
@@ -191,5 +223,30 @@ func snapshot() -> Dictionary:
 
 
 func restore(saved: Dictionary) -> void:
-	nodes = saved["nodes"].duplicate(true)
-	next_id = int(saved["next_id"])
+	if not saved.get("nodes") is Dictionary: return
+	var candidate: Dictionary = saved["nodes"].duplicate(true)
+	var largest := 0
+	for id in candidate:
+		if not id is int or not candidate[id] is Dictionary: return
+		var component: Dictionary = candidate[id]
+		if not component.get("kind", "") in ["SENSOR","OUTPUT","DIESEL","PADAM","WIRE","NOT","AND","OR","XOR","LATCH","NAND","NOR"]: return
+		if not component.get("position") is Vector2 or not component.get("inputs") is Dictionary: return
+		if not component.get("sensor") is String: return
+		largest = maxi(largest, id)
+		component["runtime"] = {}
+		for port in component["inputs"]:
+			if not port is int or port < 0 or port > 1 or not candidate.has(component["inputs"][port]): return
+	nodes = candidate
+	next_id = largest+1
+
+
+func import_outputs(outputs: Array, trees: Dictionary = {}) -> void:
+	nodes.clear()
+	import_memo.clear()
+	next_id = 1
+	for i in range(outputs.size()):
+		var id := add_component("OUTPUT", String(outputs[i]), Vector2(660, i * 240))
+		var tree: Dictionary = trees.get(outputs[i], {})
+		var source := _import_node(tree, Vector2(180, i * 240), 2)
+		if source != 0:
+			nodes[id]["inputs"][0] = source

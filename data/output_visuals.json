@@ -1,0 +1,148 @@
+{
+  "LAMPU_UJI": {
+    "name": "LAMPU UJI",
+    "kind": "lamp",
+    "zone": "gardu",
+    "offset": [
+      -190,
+      120
+    ],
+    "source_zone": "gardu",
+    "source_offset": [
+      -70,
+      100
+    ]
+  },
+  "LAMPU_HALAMAN": {
+    "name": "LAMPU HALAMAN",
+    "kind": "lamp",
+    "zone": "gardu",
+    "offset": [
+      -235,
+      200
+    ],
+    "source_zone": "gardu",
+    "source_offset": [
+      -70,
+      100
+    ]
+  },
+  "LAMPU_POS": {
+    "name": "LAMPU POS",
+    "kind": "lamp",
+    "zone": "dusun1",
+    "offset": [
+      -140,
+      150
+    ],
+    "source_pole": "ne"
+  },
+  "INDIKATOR": {
+    "name": "BEDA STATUS",
+    "kind": "indicator",
+    "zone": "gardu",
+    "offset": [
+      185,
+      90
+    ],
+    "source_zone": "gardu",
+    "source_offset": [
+      75,
+      70
+    ]
+  },
+  "Q": {
+    "name": "KONTAKTOR UJI",
+    "kind": "contactor",
+    "zone": "gardu",
+    "offset": [
+      -190,
+      120
+    ],
+    "source_zone": "gardu",
+    "source_offset": [
+      -70,
+      100
+    ]
+  },
+  "PERINTAH_DIESEL": {
+    "name": "DIESEL",
+    "kind": "diesel",
+    "zone": "pltd",
+    "offset": [
+      170,
+      30
+    ],
+    "source_pole": "sw"
+  },
+  "PERINTAH_POMPA": {
+    "name": "POMPA UTAMA",
+    "kind": "pump",
+    "zone": "pltmh",
+    "offset": [
+      200,
+      110
+    ],
+    "source_zone": "pltmh",
+    "source_offset": [
+      120,
+      20
+    ],
+    "label_offset": [
+      -140,
+      34
+    ]
+  },
+  "PERINTAH_POMPA_CADANGAN": {
+    "name": "POMPA CADANGAN",
+    "kind": "pump",
+    "zone": "pltmh",
+    "offset": [
+      280,
+      110
+    ],
+    "source_zone": "pltmh",
+    "source_offset": [
+      120,
+      20
+    ],
+    "label_offset": [
+      0,
+      34
+    ]
+  },
+  "SAMBUNG_PENGGILINGAN": {
+    "name": "PENGGILINGAN",
+    "kind": "mill",
+    "zone": "dusun2",
+    "offset": [
+      -125,
+      125
+    ],
+    "source_pole": "e"
+  },
+  "PUTUS_GUDANG": {
+    "name": "GUDANG NONKRITIS",
+    "kind": "contactor",
+    "zone": "dusun3",
+    "offset": [
+      -155,
+      150
+    ],
+    "source_pole": "se"
+  },
+  "ALARM": {
+    "name": "ALARM",
+    "kind": "alarm",
+    "zone": "gardu",
+    "offset": [
+      160,
+      -80
+    ],
+    "source_zone": "gardu",
+    "source_offset": [
+      80,
+      -40
+    ]
+  }
+}

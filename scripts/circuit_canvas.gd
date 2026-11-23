@@ -48,6 +48,15 @@ func zoom_at(at: Vector2, factor: float) -> void:
 	scroll_offset = point * zoom - at
 
 
+func _over_component() -> bool:
+	var point := get_global_mouse_position()
+	for child in get_children():
+		# Include the port hit areas so starting a cable never pans the board.
+		if child is GraphNode and child.visible and child.get_global_rect().grow(16).has_point(point):
+			return true
+	return false
+
+
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		panning = false
@@ -82,10 +91,16 @@ func _input(event: InputEvent) -> void:
 				return
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
+		if inside and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT and not locked:
+			var cable := connection_at(get_local_mouse_position())
+			if not cable.is_empty():
+				disconnection_request.emit(cable["from_node"],int(cable["from_port"]),cable["to_node"],int(cable["to_port"]))
+				get_viewport().set_input_as_handled()
+				return
 		if inside and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
 			zoom_at(get_local_mouse_position(), 1.12 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.12)
 			get_viewport().set_input_as_handled()
-		elif event.button_index == MOUSE_BUTTON_MIDDLE or (event.button_index == MOUSE_BUTTON_LEFT and (space_held or panning)):
+		elif event.button_index == MOUSE_BUTTON_MIDDLE or (event.button_index == MOUSE_BUTTON_LEFT and (space_held or panning or (event.pressed and inside and not get_viewport().gui_is_dragging() and not connection_dragging and not _over_component()))):
 			if inside or panning:
 				panning = event.pressed
 				mouse_default_cursor_shape = Control.CURSOR_DRAG if panning else Control.CURSOR_ARROW
@@ -98,36 +113,8 @@ func _input(event: InputEvent) -> void:
 
 
 func _get_connection_line(from_position: Vector2, to_position: Vector2) -> PackedVector2Array:
-	var guides := PackedVector2Array([from_position])
-	var stub := 24 * zoom
-	if to_position.x - from_position.x < stub * 2:
-		# Route backwards connections around the symbols instead of through them.
-		var above := minf(from_position.y, to_position.y) - 56 * zoom
-		guides.append(Vector2(from_position.x + stub, from_position.y))
-		guides.append(Vector2(from_position.x + stub, above))
-		guides.append(Vector2(to_position.x - stub, above))
-		guides.append(Vector2(to_position.x - stub, to_position.y))
-	elif absf(from_position.y - to_position.y) > zoom:
-		var middle := (from_position.x + to_position.x) * 0.5
-		guides.append(Vector2(middle, from_position.y))
-		guides.append(Vector2(middle, to_position.y))
-	guides.append(to_position)
-	var points := PackedVector2Array([guides[0]])
-	for i in range(1, guides.size() - 1):
-		var corner := guides[i]
-		var incoming := guides[i - 1] - corner
-		var outgoing := guides[i + 1] - corner
-		var radius := minf(7 * zoom, minf(incoming.length(), outgoing.length()) * 0.45)
-		if radius < 0.01:
-			continue
-		var entry := corner + incoming.normalized() * radius
-		var exit := corner + outgoing.normalized() * radius
-		points.append(entry)
-		for step in range(1, 6):
-			var t := step / 5.0
-			points.append(entry * (1 - t) * (1 - t) + corner * 2 * (1 - t) * t + exit * t * t)
-	points.append(guides[-1])
-	return points
+	return PackedVector2Array([from_position, to_position])
+
 
 
 func _is_in_input_hotzone(in_node: Object, in_port: int, mouse_position: Vector2) -> bool:
@@ -150,3 +137,24 @@ func _is_in_input_hotzone(in_node: Object, in_port: int, mouse_position: Vector2
 func _is_in_output_hotzone(in_node: Object, in_port: int, mouse_position: Vector2) -> bool:
 	var point: Vector2 = in_node.position / in_node.scale + in_node.get_output_port_position(in_port)
 	return mouse_position.distance_to(point) * zoom <= 16
+
+func connection_at(point: Vector2) -> Dictionary:
+	var nearest: Dictionary = {}
+	var distance := 9.0
+	for cable in get_connection_list():
+		var source := get_node_or_null(NodePath(cable["from_node"])) as GraphNode
+		var target := get_node_or_null(NodePath(cable["to_node"])) as GraphNode
+		if source == null or target == null: continue
+		var from_port := int(cable["from_port"])
+		var to_port := int(cable["to_port"])
+		if from_port >= source.get_output_port_count() or to_port >= target.get_input_port_count(): continue
+		var start := source.position + source.get_output_port_position(from_port)*source.scale
+		var end := target.position + target.get_input_port_position(to_port)*target.scale
+		var points := get_connection_line(start,end)
+		for i in range(1,points.size()):
+			var hit := Geometry2D.get_closest_point_to_segment(point,points[i-1],points[i])
+			var current := hit.distance_to(point)
+			if current < distance:
+				distance = current
+				nearest = cable
+	return nearest

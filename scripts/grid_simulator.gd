@@ -17,6 +17,25 @@ const F_TINGGI_THRESH := 50.20
 const BASE_MINS_PER_SEC := 4.0
 
 var current_level: Dictionary = {}
+var output_trees: Dictionary = {}
+var output_values: Dictionary = {}
+var episode_index := 0
+var episode_tick := 0
+var official_tick := 0
+var certification_done := false
+var control_failed := false
+var failure_feedback_active := false
+var failure_feedback_reason := ""
+var failure_feedback_accum := 0.0
+var failure_feedback_steps := 0
+var pending_control_failure := ""
+var scenario_inputs: Dictionary = {}
+var scenario_step := 0
+var diesel_warmup := 0
+var pump_response := 0
+var tank_level := 25.0
+var critical_service_ticks := 0
+var water_service_ticks := 0
 var diesel_tree: Dictionary = {}
 var shed_tree: Dictionary = {}
 
@@ -57,8 +76,6 @@ var prev_shed_d3_on: bool = false
 var diesel_starts: int = 0
 var shed_flickers: int = 0
 var shed_minutes: int = 0
-var cost_rp: float = 0.0
-var co2_kg: float = 0.0
 var out_of_bounds_mins: int = 0
 
 var dusun1_powered: bool = true
@@ -90,6 +107,25 @@ func setup_level(level_dict: Dictionary, d_tree: Dictionary, s_tree: Dictionary)
 
 func reset_simulation() -> void:
 	is_running = false
+	certification_done = false
+	control_failed = false
+	failure_feedback_active = false
+	failure_feedback_accum = 0.0
+	failure_feedback_steps = 0
+	pending_control_failure = ""
+	scenario_step = 0
+	diesel_warmup = 0
+	pump_response = 0
+	tank_level = 25.0
+	critical_service_ticks = 0
+	water_service_ticks = 0
+	scenario_inputs = current_level.get("initial_inputs", {}).duplicate()
+	episode_index = 0
+	episode_tick = 0
+	official_tick = 0
+	output_values.clear()
+	for tree in output_trees.values():
+		LT.reset_memory(tree)
 	sim_accum = 0.0
 	current_min = start_min
 	frequency = NOMINAL_FREQ
@@ -100,8 +136,6 @@ func reset_simulation() -> void:
 	diesel_starts = 0
 	shed_flickers = 0
 	shed_minutes = 0
-	cost_rp = 0.0
-	co2_kg = 0.0
 	out_of_bounds_mins = 0
 	dusun1_powered = true
 	dusun2_powered = true
@@ -146,6 +180,9 @@ func stop_simulation() -> void:
 func _process(delta: float) -> void:
 	if not is_running or current_level.is_empty():
 		return
+	if failure_feedback_active:
+		_advance_failure_feedback(delta)
+		return
 
 	sim_accum += delta * BASE_MINS_PER_SEC * speed_multiplier
 	var max_steps_per_frame: int = 8
@@ -157,6 +194,10 @@ func _process(delta: float) -> void:
 
 
 func _step_one_minute() -> void:
+	if failure_feedback_active: return
+	if current_level.has("test_episodes"):
+		_step_mission()
+		return
 	if current_min >= end_min:
 		_finish_simulation(true, "Desa Sukamaju berhasil menjaga kesetimbangan 50.00 Hz sepanjang jadwal operasi!")
 		return
@@ -235,10 +276,6 @@ func _step_one_minute() -> void:
 		if frequency < 49.96:
 			target_diesel += 6.0
 		diesel_kw = clampf(target_diesel, diesel_min_kw, diesel_cap_kw)
-		# Fuel cost & CO2 per minute of diesel operation
-		var kwh_step: float = diesel_kw / 60.0
-		cost_rp += kwh_step * 2650.0 # ~Rp 2.650 / kWh diesel solar
-		co2_kg += kwh_step * 0.62
 	else:
 		diesel_kw = 0.0
 
@@ -320,6 +357,12 @@ func _sample_environment(minute: int) -> void:
 	is_rice_mill_active = false
 	is_sahur_surge = false
 
+	if current_level.has("outputs"):
+		rain_intensity = float(current_level.get("initial_inputs",{}).get("RAIN",1.0 if current_level.get("has_rain",false) else 0.0))
+		cloud_cover = maxf(float(current_level.get("initial_inputs",{}).get("CLOUD",0)),0.85 if rain_intensity>0 else 0.0)
+		pltmh_kw = 45.0
+		plts_kw = 65.0*sun_factor*(1-cloud_cover*0.85)
+		return
 	match lvl_id:
 		1:
 			# Level 1: Senja di Sukamaju (15:00 - 21:30)
@@ -428,7 +471,7 @@ func _sample_environment(minute: int) -> void:
 func _update_sensors() -> void:
 	sensors_state = {
 		"NONE": false,
-		"SIANG": sun_factor >= 0.28,
+		"SIANG": current_min % 1440 >= 360 and current_min % 1440 < 1080,
 		"MENDUNG": cloud_cover >= 0.55,
 		"F_RENDAH": frequency < F_RENDAH_THRESH,
 		"F_TINGGI": frequency > F_TINGGI_THRESH,
@@ -467,6 +510,8 @@ func count_total_gates() -> int:
 	var roots: Array = [diesel_tree]
 	if bool(current_level.get("has_shed_actuator", false)):
 		roots.append(shed_tree)
+	if current_level.has("outputs"):
+		roots = output_trees.values()
 	return LT.count_circuit_gates(roots)
 
 
@@ -492,8 +537,6 @@ func _emit_state() -> void:
 		"diesel_starts": diesel_starts,
 		"shed_flickers": shed_flickers,
 		"shed_minutes": shed_minutes,
-		"cost_rp": cost_rp,
-		"co2_kg": co2_kg,
 		"dusun1_powered": dusun1_powered,
 		"dusun2_powered": dusun2_powered,
 		"dusun3_powered": dusun3_powered,
@@ -501,6 +544,15 @@ func _emit_state() -> void:
 		"cascade_stage": cascade_stage,
 		"sensors": sensors_state,
 		"freq_history": freq_history,
+		"tank_level": tank_level,
+		"diesel_ready": diesel_warmup>=2 or (failure_feedback_active and diesel_kw>0),
+		"pump_running": pump_response>0,
+		"backup_pump_running": bool(output_values.get("PERINTAH_POMPA_CADANGAN",false)) and bool(sensors_state.get("IZIN_OPERASI",true)) and bool(sensors_state.get("SUMBER_AIR_ADA",true)) and not bool(sensors_state.get("MODE_PERAWATAN",false)),
+		"outputs": output_values,
+		"control_failed": control_failed,
+		"certification_done": certification_done,
+		"scenario_step": scenario_step,
+		"failure_feedback_active": failure_feedback_active,
 		"control_log": control_log
 	})
 
@@ -508,34 +560,198 @@ func _emit_state() -> void:
 func _finish_simulation(success: bool, reason: String) -> void:
 	is_running = false
 	var gate_cnt: int = count_total_gates()
-	var target_g: int = int(current_level.get("target_gates", 1))
-	var target_cost: float = float(current_level.get("target_cost_rp", 790000))
-	var target_shed: int = int(current_level.get("target_shed_minutes", 0))
-	var has_shed: bool = bool(current_level.get("has_shed_actuator", false))
-
-	var stars: int = 0
-	if success:
-		stars = 3
-		if has_shed:
-			if shed_minutes > target_shed:
-				stars -= 1
-		else:
-			if cost_rp > target_cost:
-				stars -= 1
-		if gate_cnt > target_g:
-			stars -= 1
-		stars = clampi(stars, 1, 3)
-
 	simulation_finished.emit(success, reason, {
-		"stars": stars,
-		"cost_rp": int(roundf(cost_rp)),
-		"target_cost_rp": int(target_cost),
-		"co2_kg": int(roundf(co2_kg)),
 		"gate_count": gate_cnt,
-		"target_gates": target_g,
 		"diesel_starts": diesel_starts,
 		"shed_minutes": shed_minutes,
-		"target_shed_minutes": target_shed,
-		"has_shed_actuator": has_shed,
 		"end_time_str": format_time(current_min)
 	})
+
+func _step_mission() -> void:
+	if certification_done:
+		_step_village_scenario()
+		return
+	var episodes: Array = current_level["test_episodes"]
+	# Bounded batch keeps exhaustive certification quick without tying state to rendering.
+	for batch in range(32):
+		if episode_index >= episodes.size():
+			if not pending_control_failure.is_empty():
+				_emit_state()
+				_finish_simulation(false,pending_control_failure)
+				return
+			certification_done = true
+			for tree in output_trees.values(): LT.reset_memory(tree)
+			output_values.clear()
+			current_min = start_min
+			frequency = 50.0
+			_add_log("Uji kendali lulus. Menjalankan skenario desa.")
+			return
+		var sequence: Array = episodes[episode_index]
+		if episode_tick == 0:
+			for tree in output_trees.values():
+				LT.reset_memory(tree)
+		var sample: Dictionary = sequence[episode_tick]
+		sensors_state = sample["inputs"].duplicate()
+		official_tick += 1
+		sensors_state["_tick"] = official_tick
+		sensors_state["_dt"] = 1.0
+		for output in current_level["outputs"]:
+			if not output_trees.has(output):
+				_finish_simulation(false, "Keluaran %s belum terhubung." % output)
+				return
+			output_values[output] = LT.evaluate(output_trees[output], sensors_state, true)
+			if output_values[output] != sample["expected"][output]:
+				_add_log("Kasus %d, langkah %d: %s" % [episode_index+1, episode_tick+1, output])
+				control_failed = true
+				var reason := "%s seharusnya %d, tetapi %d. Input: %s" % [output, int(sample["expected"][output]), int(output_values[output]), str(sample["inputs"])]
+				if _preview_control_failure(output,bool(output_values[output]),bool(sample["expected"][output]),sample["inputs"],reason): return
+				if output in ["PERINTAH_DIESEL","PUTUS_GUDANG","SAMBUNG_PENGGILINGAN"]:
+					pending_control_failure = reason
+					continue
+				_emit_state()
+				_finish_simulation(false,reason)
+				return
+		episode_tick += 1
+		if episode_tick >= sequence.size():
+			episode_tick = 0
+			episode_index += 1
+	# Certification does not advance the village clock.
+	diesel_on = bool(output_values.get("PERINTAH_DIESEL", false))
+	shed_d3_on = bool(output_values.get("PUTUS_GUDANG", false))
+	sun_factor = 1.0 if sensors_state.get("SIANG", true) else 0.0
+	cloud_cover = 0.9 if sensors_state.get("MENDUNG", false) else 0.0
+	frequency = 50.0
+	_add_log("Uji resmi: %d/%d skenario" % [episode_index, episodes.size()])
+	_emit_state()
+
+func _step_village_scenario() -> void:
+	var id := int(current_level["id"])
+	for event in current_level.get("timeline", []):
+		if int(event["step"]) == scenario_step:
+			scenario_inputs.merge(event.get("inputs", {}), true)
+			_add_log(event["description"])
+			world_callout.emit("gardu", event["description"], Color("ffde54"))
+	current_min = start_min + scenario_step
+	# Environment facts come from the simulation clock and current cloud cover.
+	sun_factor = 1.0 if current_min % 1440 >= 360 and current_min % 1440 < 1080 else 0.0
+	rain_intensity = float(scenario_inputs.get("RAIN",1.0 if current_level.get("has_rain",false) else 0.0))
+	cloud_cover = maxf(float(scenario_inputs.get("CLOUD",0)),0.85 if rain_intensity>0 else 0.0)
+	pltmh_kw = 20.0 if scenario_inputs.get("GANGGUAN_HIDRO", false) else 45.0
+	plts_kw = 65.0 * sun_factor * (1.0-cloud_cover*0.85)
+	diesel_cap_kw = 75.0
+	var full_demand := 80.0 + (50.0 if scenario_inputs.get("SAHUR", false) else 0.0)
+	var capacity := pltmh_kw+plts_kw+(diesel_cap_kw if diesel_warmup >= 2 else 0.0)
+	sensors_state = scenario_inputs.duplicate()
+	sensors_state.merge({"SIANG":sun_factor>0,"MENDUNG":cloud_cover>=0.55,"DIESEL_SIAP":diesel_warmup>=2,"F_RENDAH":frequency<49.8,"F_TINGGI":frequency>50.2,"DIESEL_PENUH":diesel_warmup>=2 and diesel_kw>=diesel_cap_kw*0.92,"CADANGAN_CUKUP":capacity>=full_demand+5,"JARINGAN_AMAN":frequency>=49.8 and frequency<=50.2,"TANGKI_RENDAH":tank_level<30,"TANGKI_PENUH":tank_level>=95},true)
+	if id in [12,19,20]:
+		sensors_state["STATUS_POMPA"] = pump_response>=2 and not bool(scenario_inputs.get("STATUS_GAGAL",false))
+	official_tick += 1
+	sensors_state["_tick"] = official_tick
+	sensors_state["_dt"] = 1.0
+	for output in current_level["outputs"]:
+		output_values[output] = LT.evaluate(output_trees[output], sensors_state, true)
+		if id == 20 and output == "PERINTAH_POMPA":
+			sensors_state["PERINTAH_POMPA"] = output_values[output]
+	# Built-in protections cannot be bypassed by a command.
+	var command := bool(output_values.get("PERINTAH_DIESEL",id in [14,15,16]))
+	diesel_on = command and bool(scenario_inputs.get("DIESEL_SEHAT",true)) and bool(scenario_inputs.get("IZIN_OPERASI",true))
+	if diesel_on and diesel_warmup==0: diesel_starts += 1
+	diesel_warmup = diesel_warmup+1 if diesel_on else 0
+	var pump := bool(output_values.get("PERINTAH_POMPA",scenario_inputs.get("PERINTAH_POMPA",false)))
+	var backup := bool(output_values.get("PERINTAH_POMPA_CADANGAN",false))
+	if pump and backup:
+		_finish_simulation(false,"Konflik perintah: pompa utama dan cadangan menyala bersamaan.")
+		return
+	pump = pump and not bool(scenario_inputs.get("GANGGUAN_POMPA",false)) and bool(scenario_inputs.get("IZIN_OPERASI",true)) and bool(scenario_inputs.get("SUMBER_AIR_ADA",true))
+	pump_response = pump_response+1 if pump else 0
+	tank_level = clampf(tank_level + (8.0 if pump or backup else -2.0),0,100)
+	shed_d3_on = bool(output_values.get("PUTUS_GUDANG",false))
+	if shed_d3_on: shed_minutes += 1
+	demand_kw = full_demand-(40.0 if shed_d3_on else 0.0)
+	diesel_kw = clampf(demand_kw-pltmh_kw-plts_kw,0,diesel_cap_kw) if diesel_warmup>=2 else 0.0
+	supply_kw = minf(demand_kw,pltmh_kw+plts_kw+diesel_kw)
+	# Early lessons are a safe training panel, without a blackout hazard.
+	if id in [6,10,14,15,16,19,20]:
+		frequency = clampf(frequency+(supply_kw-demand_kw)*0.0022,48.6,50.5)
+		if supply_kw>=demand_kw: frequency = move_toward(frequency,50.0,0.06)
+		if frequency<49.5: out_of_bounds_mins += 1
+		else: out_of_bounds_mins = 0
+		if out_of_bounds_mins>=8:
+			control_failed = true
+			_begin_failure_feedback("Cadangan terlambat / beban melebihi kapasitas: proteksi jaringan memutus suplai.")
+			return
+	if id>=19 and puskesmas_powered: critical_service_ticks += 1
+	if tank_level > 0: water_service_ticks += 1
+	dusun3_powered = not shed_d3_on
+	freq_history.append(frequency)
+	if freq_history.size()>90: freq_history.pop_front()
+	scenario_step += 1
+	_emit_state()
+	if scenario_step >= int(current_level.get("scenario_duration",60)):
+		var success := not (id==20 and (shed_d3_on or shed_minutes>30 or critical_service_ticks<scenario_step or water_service_ticks<scenario_step))
+		_finish_simulation(success,"Skenario selesai: layanan kritis terjaga dan beban kembali." if success else "Gudang belum pulih / durasi pemutusan melebihi batas / layanan kritis terganggu.")
+
+func _preview_control_failure(output: String, actual: bool, expected: bool, inputs: Dictionary, reason: String) -> bool:
+	# Demonstrate only counterexamples with a real electrical consequence.
+	# Logic-only faults (lamp, alarm, permission blocked by protection) stay at their measured frequency.
+	if not output in ["PERINTAH_DIESEL","PUTUS_GUDANG","SAMBUNG_PENGGILINGAN"]: return false
+	sun_factor = 1.0 if inputs.get("SIANG",true) else 0.0
+	cloud_cover = 0.9 if inputs.get("MENDUNG",false) else 0.0
+	pltmh_kw = 45.0
+	plts_kw = 65.0*sun_factor*(1.0-cloud_cover*0.85)
+	demand_kw = 80.0
+	diesel_on = false
+	diesel_kw = 0.0
+	if output=="PERINTAH_DIESEL":
+		diesel_on = actual and bool(inputs.get("IZIN_OPERASI",true)) and bool(inputs.get("DIESEL_SEHAT",true))
+		if actual and not diesel_on: return false
+		plts_kw = minf(plts_kw,maxf(0,demand_kw-pltmh_kw))
+		if diesel_on: diesel_kw = clampf(demand_kw-pltmh_kw-plts_kw,24.0,75.0)
+	elif output=="PUTUS_GUDANG":
+		var shortage := bool(inputs.get("F_RENDAH",false)) and bool(inputs.get("DIESEL_PENUH",false))
+		demand_kw = (135.0 if shortage else 80.0)-(40.0 if actual else 0.0)
+		plts_kw = 0.0
+		diesel_on = true
+		diesel_kw = clampf(demand_kw-pltmh_kw,24.0,75.0)
+		shed_d3_on = actual
+	elif output=="SAMBUNG_PENGGILINGAN":
+		if not actual or expected: return false
+		demand_kw = 110.0
+		plts_kw = 0.0
+		diesel_on = bool(inputs.get("DIESEL_SIAP",false))
+		diesel_kw = 65.0 if diesel_on else 0.0
+	supply_kw = pltmh_kw+plts_kw+diesel_kw
+	if is_zero_approx(supply_kw-demand_kw): return false
+	frequency = NOMINAL_FREQ
+	_begin_failure_feedback(reason)
+	return true
+
+func _begin_failure_feedback(reason: String) -> void:
+	failure_feedback_active = true
+	failure_feedback_reason = reason
+	failure_feedback_accum = 0.0
+	failure_feedback_steps = 0
+	out_of_bounds_mins = 0
+	world_callout.emit("gardu","PASOKAN KURANG" if supply_kw<demand_kw else "PASOKAN BERLEBIH",Color("ff9280"))
+	_emit_state()
+
+func _advance_failure_feedback(delta: float) -> void:
+	failure_feedback_accum += delta
+	while failure_feedback_accum >= 0.1 and failure_feedback_active:
+		failure_feedback_accum -= 0.1
+		failure_feedback_steps += 1
+		frequency = clampf(frequency+(supply_kw-demand_kw)*0.0022,48.6,51.4)
+		freq_history.append(frequency)
+		if freq_history.size()>90: freq_history.pop_front()
+		if frequency<MIN_SAFE_FREQ or frequency>MAX_SAFE_FREQ: out_of_bounds_mins += 1
+		else: out_of_bounds_mins = 0
+		cascade_stage = 3 if out_of_bounds_mins>=8 else (2 if out_of_bounds_mins>=5 else (1 if out_of_bounds_mins>=2 else 0))
+		dusun3_powered = not shed_d3_on and cascade_stage<1
+		dusun2_powered = cascade_stage<2
+		dusun1_powered = cascade_stage<3
+		puskesmas_powered = cascade_stage<3
+		_emit_state()
+		if failure_feedback_steps>=24 or (cascade_stage>=3 and failure_feedback_steps>=16):
+			failure_feedback_active = false
+			var effect := "Pasokan %.0f kW lebih kecil dari beban %.0f kW, sehingga frekuensi turun ke %.2f Hz." if supply_kw<demand_kw else "Pasokan %.0f kW melebihi beban %.0f kW, sehingga frekuensi naik ke %.2f Hz."
+			_finish_simulation(false,failure_feedback_reason+"\n\n"+effect % [supply_kw,demand_kw,frequency])

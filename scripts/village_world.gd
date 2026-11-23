@@ -8,6 +8,7 @@ class_name VillageWorld
 
 signal gardu_clicked()
 signal zoom_changed(new_zoom: float)
+signal mission_output_selected(output: String)
 
 const TOWN_TILEMAP_PATH := "res://Kenney Asset/kenney_tiny-town/Tilemap/tilemap_packed.png"
 const CITY_TILEMAP_PATH := "res://Kenney Asset/kenney_tiny-city/Tilemap/tilemap_packed.png"
@@ -81,6 +82,9 @@ var is_interactive: bool = false
 var is_blackout_banner: bool = false
 
 # Camera focus, zoom & drag-pan state
+var mission_map: Node2D
+var mission_values: Dictionary = {}
+
 var cam_target_pos: Vector2 = Vector2(WORLD_W * 0.5, WORLD_H * 0.52)
 var cam_target_zoom: float = DEFAULT_OVERVIEW_ZOOM
 var shake_trauma: float = 0.0
@@ -482,6 +486,7 @@ func _scan_dynamic_lights_from_tilemaps() -> void:
 
 
 func set_title_ambience() -> void:
+	if is_instance_valid(mission_map): mission_map.hide()
 	sun_factor = 0.24
 	cloud_cover = 0.14
 	rain_intensity = 0.0
@@ -633,6 +638,12 @@ func _unhandled_input(event: InputEvent) -> void:
 					drag_button = -1
 					if was_click:
 						var world_m: Vector2 = get_global_mouse_position()
+						if is_instance_valid(mission_map):
+							var output: String = mission_map.hit_test_output(world_m)
+							if not output.is_empty():
+								mission_output_selected.emit(output)
+								get_viewport().set_input_as_handled()
+								return
 						if gardu_world_rect.has_point(world_m):
 							gardu_clicked.emit()
 							get_viewport().set_input_as_handled()
@@ -894,6 +905,9 @@ func _draw_cables() -> void:
 	if cables_overlay == null:
 		return
 	var cv: Node2D = cables_overlay
+	var diesel_feeder_active := diesel_on
+	if is_instance_valid(mission_map) and mission_map.is_visible_in_tree() and mission_map.states.has("PERINTAH_DIESEL"):
+		diesel_feeder_active = bool(mission_map.visual_state("PERINTAH_DIESEL").get("running",false))
 
 	# Subtle Gardu status aura behind the Gardu Induk building (never blocks the doors!)
 	var core_pos: Vector2 = zone_anchors["gardu"]
@@ -943,10 +957,10 @@ func _draw_cables() -> void:
 	_draw_catenary_line(cv, p_gardu_w, gardu_in, pltmh_kw > 1.0, col_hydro)
 
 	# 3. PLTD Diesel -> SW Pole (16,19) -> West Pole (16,11) -> Gardu West Pole (20,7) -> behind Gardu
-	_draw_catenary_line(cv, pltd_anchor, p_sw, diesel_on, col_diesel)
-	_draw_catenary_line(cv, p_sw + Vector2(6.0, 0.0), p_w + Vector2(6.0, 0.0), diesel_on, col_diesel)
-	_draw_catenary_line(cv, p_w + Vector2(6.0, 0.0), p_gardu_w + Vector2(6.0, 0.0), diesel_on, col_diesel)
-	_draw_catenary_line(cv, p_gardu_w, gardu_in + Vector2(0.0, 12.0), diesel_on, col_diesel)
+	_draw_catenary_line(cv, pltd_anchor, p_sw, diesel_feeder_active, col_diesel)
+	_draw_catenary_line(cv, p_sw + Vector2(6.0, 0.0), p_w + Vector2(6.0, 0.0), diesel_feeder_active, col_diesel)
+	_draw_catenary_line(cv, p_w + Vector2(6.0, 0.0), p_gardu_w + Vector2(6.0, 0.0), diesel_feeder_active, col_diesel)
+	_draw_catenary_line(cv, p_gardu_w, gardu_in + Vector2(0.0, 12.0), diesel_feeder_active, col_diesel)
 
 	# --- DISTRIBUTION FEEDERS (behind Gardu -> Gardu East Pole -> East Poles -> behind Houses!) ---
 	# 4. Puskesmas (straight clean feeder behind Gardu -> behind Puskesmas roof)
@@ -1256,3 +1270,27 @@ func _draw_world_tag(cv: Node2D, center: Vector2, text: String, active: bool, is
 	cv.draw_rect(rect, border, false, 1.6)
 	cv.draw_circle(Vector2(rect.position.x + 10.0, rect.position.y + 12.0), 4.0, dot)
 	cv.draw_string(font, Vector2(rect.position.x + 18.0, rect.position.y + 16.5), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fsize, Color(0.94, 0.98, 1.0))
+
+func configure_mission(level: Dictionary) -> void:
+	if is_instance_valid(mission_map):
+		remove_child(mission_map)
+		mission_map.queue_free()
+	mission_map = preload("res://scripts/mission_map.gd").new()
+	mission_map.level = level
+	mission_map.world = self
+	add_child(mission_map)
+	map_layers.show()
+	if river_water != null: river_water.show()
+	if water_gear != null: water_gear.show()
+	reset_camera_view()
+
+func update_mission_outputs(context: Dictionary) -> void:
+	mission_values = context.get("outputs",{})
+	if is_instance_valid(mission_map):
+		mission_map.set_context(context)
+		if mission_map.states.has("SAMBUNG_PENGGILINGAN"):
+			is_rice_mill_active = bool(mission_map.visual_state("SAMBUNG_PENGGILINGAN").get("running",false))
+		if mission_map.states.has("PUTUS_GUDANG"):
+			# The controllable load is the warehouse, not all homes in Dusun 3.
+			shed_d3_on = false
+			dusun3_powered = cascade_stage<1

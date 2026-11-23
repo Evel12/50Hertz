@@ -42,50 +42,103 @@ static func modal(game: Node, heading: String, subtitle: String, extent: Vector2
 static func title(game: Node) -> void:
 	var screen := TitleMenu.new()
 	screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	screen.start_requested.connect(func(): game._show_screen(game.GameScreen.LEVEL_SELECT))
+	screen.start_requested.connect(game._on_menu_start)
 	screen.rules_requested.connect(func(): game._show_screen(game.GameScreen.RULES))
-	screen.exit_requested.connect(func(): game.get_tree().quit())
+	screen.credits_requested.connect(func(): game._show_screen(game.GameScreen.CREDITS))
+	screen.exit_requested.connect(game._request_exit)
 	screen.z_index = 20
 	game.hud_root.add_child(screen)
 	game.title_screen = screen
 
 static func rules(game: Node) -> void:
-	var view := modal(game, "CARA BERMAIN", "BELAJAR LOGIKA, JAGA LISTRIK DESA.", Vector2(1040, 450))
+	var view := modal(game,"SETTINGS","TAMPILAN, AUDIO, DAN MUSIK DALAM STAGE.",Vector2(1040,600))
 	game.rules_screen = view.screen
-	var body: VBoxContainer = view.body
-	body.add_child(UI.label("Tujuanmu: jaga frekuensi di 49.50 - 50.50 Hz.", 12, UI.MINT, true))
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
-	body.add_child(row)
-	var rules_data := [
-		["01  SUSUN", "Tarik sensor dan gerbang dari tray bawah ke papan rangkaian."],
-		["02  HUBUNGKAN", "Tarik pin keluaran ke pin masukan. Susun logika untuk mengendalikan diesel."],
-		["03  UJI", "Jalankan simulasi. Pantau frekuensi dan tujuan level, lalu perbaiki rangkaian."]]
-	for item in rules_data:
-		var panel := PanelContainer.new()
-		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		panel.add_theme_stylebox_override("panel", UI.HUD.frame(UI.HUD.PANEL, 16, 16))
-		row.add_child(panel)
-		var text := VBoxContainer.new()
-		text.add_theme_constant_override("separation", 16)
-		panel.add_child(text)
-		text.add_child(UI.label(item[0], 11, UI.HUD.TEAL))
-		text.add_child(UI.label(item[1], 9, UI.HUD.INK, true))
-	body.add_child(UI.label("Pasokan kurang: frekuensi turun. Pasokan berlebih: frekuensi naik. Jika terlalu lama di luar batas, gardu akan trip dan desa padam.", 9, UI.PAPER, true))
-	body.add_child(UI.label("SCROLL  zoom papan    MMB / SPASI + DRAG  geser\nTAB  panel rangkaian    ESC  jeda permainan", 8, UI.GOLD, true))
-	view.footer.add_child(UI.button("KEMBALI", func(): game._show_screen(game.GameScreen.TITLE)))
-	view.footer.add_child(UI.button("PILIH LEVEL", func(): game._show_screen(game.GameScreen.LEVEL_SELECT), true, 190))
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation",28)
+	view.body.add_child(columns)
+	var left := VBoxContainer.new()
+	left.custom_minimum_size.x = 390
+	left.add_theme_constant_override("separation",14)
+	columns.add_child(left)
+	left.add_child(UI.label("TAMPILAN",12,UI.GOLD))
+	var fullscreen := CheckButton.new()
+	fullscreen.name = "FullscreenToggle"
+	fullscreen.text = "Fullscreen [F11]"
+	fullscreen.add_theme_font_size_override("font_size",10)
+	fullscreen.button_pressed = bool(game.progress_store.data["settings"].get("fullscreen",false))
+	fullscreen.toggled.connect(game._set_fullscreen)
+	left.add_child(fullscreen)
+	left.add_child(UI.label("F11: fullscreen | ESC: jeda\nTarik judul panel untuk memindahkan. Gunakan Tab untuk membuka atau menutup rangkaian.",8,UI.PAPER,true))
+	var right := VBoxContainer.new()
+	right.custom_minimum_size.x = 490
+	right.add_theme_constant_override("separation",9)
+	columns.add_child(right)
+	right.add_child(UI.label("AUDIO",12,UI.GOLD))
+	var captions := {"master_volume":"Volume Utama","music_volume":"Volume Musik / OST","ambience_volume":"Volume Ambience","sfx_volume":"Volume SFX"}
+	for key in captions:
+		var row := HBoxContainer.new()
+		right.add_child(row)
+		var caption := UI.label(captions[key],8,UI.PAPER)
+		caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(caption)
+		var percent := UI.label("",8,UI.GOLD)
+		row.add_child(percent)
+		var slider := HSlider.new()
+		slider.name = "Volume_"+key
+		slider.min_value = 0
+		slider.max_value = 100
+		slider.step = 1
+		slider.custom_minimum_size = Vector2(460,18)
+		slider.value = float(game.progress_store.data["settings"].get(key,game.audio.DEFAULTS[key]))*100
+		percent.text = "%d%%" % int(slider.value)
+		slider.value_changed.connect(func(value):
+			percent.text = "%d%%" % int(value)
+			game._set_audio_setting(key,value/100.0)
+		)
+		right.add_child(slider)
+	right.add_child(UI.label("OST DALAM STAGE",9,UI.GOLD))
+	var ost := OptionButton.new()
+	ost.name = "StageOSTPicker"
+	ost.custom_minimum_size = Vector2(460,34)
+	UI.HUD.button(ost)
+	ost.add_theme_font_size_override("font_size",9)
+	ost.add_item("Shuffle — semua lagu")
+	ost.set_item_metadata(0,"shuffle")
+	for id in game.audio.TRACKS:
+		ost.add_item(game.audio.TRACKS[id]["name"])
+		ost.set_item_metadata(ost.item_count-1,id)
+		if game.audio.preference==id: ost.select(ost.item_count-1)
+	ost.item_selected.connect(func(index): game._set_stage_ost(ost.get_item_metadata(index)))
+	right.add_child(ost)
+	right.add_child(UI.label("Pilihan memulai lagu tersebut, lalu lagu lain bergiliran. Menu tetap memakai Games Worldbeat.",7,UI.PAPER,true))
+	view.footer.add_child(UI.button("KEMBALI",func(): game._show_screen(game.GameScreen.TITLE),true))
+
+static func credits(game: Node) -> void:
+	var view := modal(game,"CREDITS","50 HERTZ — DESA SUKAMAJU",Vector2(1000,550))
+	game.credits_screen = view.screen
+	var text := UI.rich_text()
+	text.custom_minimum_size.y = 325
+	text.name = "CreditsText"
+	text.selection_enabled = true
+	text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text.text = FileAccess.get_file_as_string("res://data/credits.txt")
+	view.body.add_child(text)
+	view.footer.add_child(UI.button("KEMBALI",func(): game._show_screen(game.GameScreen.TITLE),true))
 
 static func level_select(game: Node) -> void:
-	var view := modal(game, "PILIH MISI GARDU", "DESA SUKAMAJU  /  EMPAT MISI MENJAGA 50 HERTZ", Vector2(1060, 580))
+	var view := modal(game, "PILIH MISI GARDU", "DESA SUKAMAJU  /  20 MISI LOGIKA DAN KELISTRIKAN", Vector2(1060, 580))
 	game.level_select_screen = view.screen
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	grid.add_theme_constant_override("h_separation", 16)
 	grid.add_theme_constant_override("v_separation", 16)
-	view.body.add_child(grid)
-	game.level_card_star_labels.clear()
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(1000, 390)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(grid)
+	view.body.add_child(scroll)
+	game.level_completion_labels.clear()
 	for i in range(game.levels.size()):
 		var level: Dictionary = game.levels[i]
 		var index := i
@@ -94,6 +147,7 @@ static func level_select(game: Node) -> void:
 		button.custom_minimum_size = Vector2(486, 170)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		grid.add_child(button)
+		game.level_buttons.append(button)
 		var margin := MarginContainer.new()
 		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		for side in ["left", "right", "top", "bottom"]:
@@ -107,9 +161,9 @@ static func level_select(game: Node) -> void:
 		var title := UI.label("%02d  /  %s" % [i + 1, level.concept_tag], 9, UI.HUD.TEAL)
 		title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		tag.add_child(title)
-		var stars := UI.label("0/3", 8, UI.HUD.WARNING)
-		tag.add_child(stars)
-		game.level_card_star_labels.append(stars)
+		var status := UI.label("BELUM SELESAI", 7, UI.HUD.WARNING)
+		tag.add_child(status)
+		game.level_completion_labels.append(status)
 		box.add_child(UI.label(level.short_title, 13, UI.HUD.INK))
 		box.add_child(UI.label(level.mission_summary, 8, UI.HUD.INK, true))
 		var spacer := Control.new()
@@ -117,17 +171,9 @@ static func level_select(game: Node) -> void:
 		box.add_child(spacer)
 		var detail := HBoxContainer.new()
 		box.add_child(detail)
-		var progress := UI.label("TARGET BINTANG", 7, UI.HUD.MUTED)
-		progress.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		detail.add_child(progress)
-		var target := "%d GERBANG" % int(level.target_gates)
-		if bool(level.has_shed_actuator):
-			target += " / PADAM <= %d MNT" % int(level.target_shed_minutes)
-		else:
-			target += " / BIAYA <= %dRB" % int(level.target_cost_rp / 1000)
-		detail.add_child(UI.label(target, 7, UI.HUD.TEAL))
 		_ignore_mouse(margin)
-	view.footer.add_child(UI.label("Pilih kartu untuk membaca laporan warga.", 8, UI.HUD.MUTED))
+	view.footer.add_child(UI.button("TUTORIAL PEMULA",game._start_intro_tutorial,false,220))
+	view.footer.add_child(UI.button("BUKU PANDUAN",func(): game._show_handbook(),false,190))
 	view.footer.add_child(UI.button("MENU UTAMA", func(): game._show_screen(game.GameScreen.TITLE), false, 190))
 
 static func briefing(game: Node) -> void:
@@ -179,7 +225,14 @@ static func briefing(game: Node) -> void:
 	game.brief_concept_desc = UI.label("", 9, UI.PAPER, true)
 	right.add_child(game.brief_concept_desc)
 	game.brief_tt_box = VBoxContainer.new()
-	right.add_child(game.brief_tt_box)
+	var io_scroll := ScrollContainer.new()
+	io_scroll.name = "BriefingIO"
+	io_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	io_scroll.custom_minimum_size.y = 190
+	io_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	game.brief_tt_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	io_scroll.add_child(game.brief_tt_box)
+	right.add_child(io_scroll)
 	view.footer.add_child(UI.button("PILIH LEVEL", func(): game._show_screen(game.GameScreen.LEVEL_SELECT), false, 175))
 	view.footer.add_child(UI.button("MULAI MERANCANG", func(): game._start_playing_current_level(), true, 240))
 
@@ -188,10 +241,10 @@ static func result(game: Node) -> void:
 	game.result_screen = view.screen
 	game.res_badge_label = UI.label("", 8, UI.PAPER)
 	game.res_title_label = UI.label("", 20, UI.MINT)
-	game.res_stars_label = UI.label("", 10, UI.GOLD, true)
+	game.res_status_label = UI.label("", 10, UI.GOLD, true)
 	view.body.add_child(game.res_badge_label)
 	view.body.add_child(game.res_title_label)
-	view.body.add_child(game.res_stars_label)
+	view.body.add_child(game.res_status_label)
 	game.res_metrics_hbox = HBoxContainer.new()
 	game.res_metrics_hbox.add_theme_constant_override("separation", 14)
 	view.body.add_child(game.res_metrics_hbox)
@@ -204,7 +257,9 @@ static func result(game: Node) -> void:
 	game.res_menu_btn = UI.button("PILIH LEVEL", func(): game._show_screen(game.GameScreen.LEVEL_SELECT))
 	game.res_retry_btn = UI.button("PERBAIKI RANGKAIAN", func(): game._retry_current_level(), false, 250)
 	game.res_next_btn = UI.button("LEVEL BERIKUTNYA", func():
-		if game.current_level_idx < game.levels.size() - 1:
+		if game.is_intro_tutorial:
+			game._finish_intro_and_start_mission()
+		elif game.current_level_idx < game.levels.size() - 1:
 			game._enter_level_briefing(game.current_level_idx + 1)
 		else:
 			game._show_screen(game.GameScreen.LEVEL_SELECT), true, 250)
@@ -225,9 +280,10 @@ static func pause(game: Node) -> void:
 		UI.button("LANJUTKAN", func(): game._set_paused(false), true),
 		UI.button("ULANGI LEVEL", func(): game._restart_current_level()),
 		UI.button("PILIH LEVEL", func(): game._leave_playing(game.GameScreen.LEVEL_SELECT)),
+		UI.button("BUKU PANDUAN", func(): game._show_handbook()),
 		UI.button("MENU UTAMA", func(): game._leave_playing(game.GameScreen.TITLE))]
 	for i in range(buttons.size()):
-		buttons[i].name = ["ResumeButton", "RestartButton", "LevelsButton", "TitleButton"][i]
+		buttons[i].name = ["ResumeButton", "RestartButton", "LevelsButton", "HandbookButton", "TitleButton"][i]
 		view.body.add_child(buttons[i])
 	view.footer.add_child(UI.label("ESC  KEMBALI KE PERMAINAN", 8, UI.HUD.MUTED))
 	game.pause_screen.hide()

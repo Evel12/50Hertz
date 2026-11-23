@@ -10,6 +10,7 @@ const MAX_PLOT_HZ := 50.8
 const EXPANDED_HEIGHT := 222.0
 const MINIMIZED_HEIGHT := 44.0
 var minimized := false
+var restored_height := EXPANDED_HEIGHT
 var minimize_button: Button
 var _collapsed_frame: StyleBoxTexture
 var frequency := 50.0
@@ -25,7 +26,7 @@ var phase := 0.0
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	tooltip_text = "Kurva menunjukkan frekuensi simulasi. Hijau: 49.50-50.50 Hz.\nTujuan wajib dan target bintang diperbarui selama operasi."
+	tooltip_text = "Kurva menunjukkan frekuensi simulasi. Hijau: 49.50-50.50 Hz.\nTujuan misi diperbarui selama operasi."
 	_collapsed_frame = UI.HUD.frame(UI.HUD.PANEL, 10, 6)
 	minimize_button = ToggleButton.new()
 	minimize_button.name = "MinimizeFrequency"
@@ -45,8 +46,12 @@ func _ready() -> void:
 	_layout_controls()
 
 func set_minimized(value: bool) -> void:
+	if value == minimized: return
+	if value: restored_height = size.y
 	minimized = value
-	offset_top = offset_bottom - (MINIMIZED_HEIGHT if minimized else EXPANDED_HEIGHT)
+	size.y = MINIMIZED_HEIGHT if minimized else restored_height
+	var handles := get_node_or_null("PanelHandles")
+	if handles != null and handles.grip != null: handles.grip.visible = not minimized
 	minimize_button.minimized = minimized
 	minimize_button.tooltip_text = "Tampilkan frekuensi jaringan" if minimized else "Minimalkan frekuensi jaringan"
 	_layout_controls()
@@ -89,29 +94,31 @@ func _hz_to_y(value: float, rect: Rect2) -> float:
 	return rect.end.y - clampf((value - MIN_PLOT_HZ) / (MAX_PLOT_HZ - MIN_PLOT_HZ), 0, 1) * rect.size.y
 
 func get_objectives() -> Array[Dictionary]:
+	if level.has("outputs"):
+		var result: Array[Dictionary] = []
+		for objective in level.get("hud_objectives", []):
+			var okay := not bool(state.get("control_failed",false))
+			if objective["title"]=="Jaringan tetap aman": okay = okay and frequency>=49.5 and frequency<=50.5
+			if objective["title"]=="Puskesmas tetap hidup": okay = okay and bool(state.get("puskesmas_powered",true))
+			result.append({"title":objective["title"],"value":objective["value"],"okay":okay})
+		if result.is_empty(): result.append({"title":"Kendali sesuai misi","value":level.get("mission_summary",""),"okay":true})
+		return result
 	var safe := frequency >= 49.5 and frequency <= 50.5 and int(state.get("cascade_stage", 0)) == 0
 	var end_min := int(level.get("end_min", 1290))
-	var goals: Array[Dictionary] = [{"title": "Bertahan s/d %02d:%02d" % [end_min / 60, end_min % 60], "value": "Jaga 49.5-50.5 Hz", "okay": safe, "star": false}]
+	var goals: Array[Dictionary] = [{"title": "Bertahan s/d %02d:%02d" % [end_min / 60, end_min % 60], "value": "Jaga 49.5-50.5 Hz", "okay": safe}]
 	if bool(level.get("has_rice_mill", false)):
-		goals.append({"title": "Penggilingan padi", "value": "Jaga tetap menyala", "okay": bool(state.get("dusun2_powered", true)), "star": false})
+		goals.append({"title": "Penggilingan padi", "value": "Jaga tetap menyala", "okay": bool(state.get("dusun2_powered", true))})
 	var max_starts := int(level.get("max_diesel_starts", 99))
 	if max_starts < 99:
 		var starts := int(state.get("diesel_starts", 0))
-		goals.append({"title": "Start diesel", "value": "%d / %d kali" % [starts, max_starts], "okay": starts <= max_starts, "star": false})
+		goals.append({"title": "Start diesel", "value": "%d / %d kali" % [starts, max_starts], "okay": starts <= max_starts})
 	if bool(level.get("has_shed_actuator", false)):
 		var flickers := int(state.get("shed_flickers", 0))
 		var max_flickers := int(level.get("max_shed_flickers", 3))
-		goals.append({"title": "Kedip Dusun 3", "value": "%d / %d kali" % [flickers, max_flickers], "okay": flickers <= max_flickers, "star": false})
+		goals.append({"title": "Kedip Dusun 3", "value": "%d / %d kali" % [flickers, max_flickers], "okay": flickers <= max_flickers})
 		var minutes := int(state.get("shed_minutes", 0))
 		var max_minutes := int(level.get("target_shed_minutes", 130))
-		goals.append({"title": "Target padam D3", "value": "%d / %d menit" % [minutes, max_minutes], "okay": minutes <= max_minutes, "star": true})
-	else:
-		var cost := float(state.get("cost_rp", 0))
-		var budget := float(level.get("target_cost_rp", 790000))
-		goals.append({"title": "Target biaya solar", "value": "Rp %drb / %drb" % [int(cost / 1000), int(budget / 1000)], "okay": cost <= budget, "star": true})
-	var gates := int(state.get("gate_count", 0))
-	var max_gates := int(level.get("target_gates", 1))
-	goals.append({"title": "Target gerbang", "value": "%d / %d gerbang" % [gates, max_gates], "okay": gates <= max_gates, "star": true})
+		goals.append({"title": "Target padam D3", "value": "%d / %d menit" % [minutes, max_minutes], "okay": minutes <= max_minutes})
 	return goals
 
 func _bar(title: String, value: float, shown: float, y: float, color: Color, split: float) -> void:
@@ -144,6 +151,12 @@ func _draw() -> void:
 	var safe := frequency >= 49.5 and frequency <= 50.5
 	var color := UI.MINT if safe else UI.RED
 	var plot := Rect2(size.x * 0.111, size.y * 0.245, size.x * 0.479, size.y * 0.442)
+	var safe_top := _hz_to_y(50.5,plot)
+	var safe_bottom := _hz_to_y(49.5,plot)
+	draw_rect(Rect2(plot.position.x,safe_top,plot.size.x,safe_bottom-safe_top),Color(0.3,1,0.7,0.08))
+	for threshold in [49.5,50.5]:
+		var boundary := _hz_to_y(threshold,plot)
+		draw_line(Vector2(plot.position.x,boundary),Vector2(plot.end.x,boundary),Color(1,0.6,0.45,0.6),1)
 	for hz in [50.5, 50.0, 49.5]:
 		var y := _hz_to_y(hz, plot)
 		_label("%.1f" % hz, Rect2(12, y - 6, 35, 12), 7)
@@ -164,8 +177,10 @@ func _draw() -> void:
 	var sweep := plot.position.x + fmod(phase / 6.0, 1.0) * plot.size.x
 	draw_line(Vector2(sweep, plot.position.y), Vector2(sweep, plot.end.y), Color(0.6, 1, 0.85, 0.08))
 	_label("%.2f Hz" % frequency, Rect2(plot.position + Vector2(7, 4), Vector2(plot.size.x - 14, 18)), 9, color)
-	_bar("PASOKAN", supply_kw, shown_supply, size.y - 47, UI.MINT, split)
-	_bar("BEBAN", demand_kw, shown_demand, size.y - 27, UI.GOLD, split)
+	if not safe:
+		_label("TURUN" if frequency<49.5 else "NAIK",Rect2(plot.position+Vector2(7,23),Vector2(plot.size.x-14,14)),8,UI.RED)
+	_bar("PASOKAN", supply_kw, shown_supply, size.y - 54, UI.MINT, split)
+	_bar("BEBAN", demand_kw, shown_demand, size.y - 34, UI.GOLD, split)
 	var goals := get_objectives()
 	var x := split + 13
 	var row_height := minf(43.0, (size.y - 61) / goals.size())
@@ -173,11 +188,7 @@ func _draw() -> void:
 		var goal: Dictionary = goals[i]
 		var y := 49.0 + i * row_height
 		var goal_color: Color = UI.PAPER if goal.okay else UI.RED
-		# Diamond means a bonus target; square means a required condition.
-		if goal.star:
-			draw_colored_polygon(PackedVector2Array([Vector2(x, y + 6), Vector2(x + 3, y + 3), Vector2(x + 6, y + 6), Vector2(x + 3, y + 9)]), UI.GOLD)
-		else:
-			draw_rect(Rect2(x, y + 4, 5, 5), UI.MINT if goal.okay else UI.RED)
+		draw_rect(Rect2(x, y + 4, 5, 5), UI.MINT if goal.okay else UI.RED)
 		var text_width := size.x - x - 24
 		_label(goal.title, Rect2(x + 12, y, text_width, 13), 7, goal_color)
 		_label(goal.value, Rect2(x + 12, y + 14, text_width, 12), 7, UI.MINT if goal.okay else UI.RED)

@@ -12,6 +12,7 @@ var _face: StyleBoxTexture
 var _selected_face: StyleBoxTexture
 var _moving := false
 var _drag_delta := Vector2.ZERO
+var _drag_mouse_origin := Vector2.ZERO
 var _drag_positions: Dictionary = {}
 
 
@@ -23,9 +24,9 @@ func configure(id: int, data: Dictionary) -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	var kind := String(data["kind"])
-	var actuator := kind in ["DIESEL", "PADAM"]
+	var actuator := kind in ["DIESEL", "PADAM", "OUTPUT"]
 	var sensor := kind == "SENSOR"
-	var binary := kind in ["AND", "OR", "LATCH"]
+	var binary := kind in ["AND", "OR", "XOR", "NAND", "NOR", "LATCH"]
 	custom_minimum_size = Vector2(164 if sensor else 146, 0)
 	var empty := StyleBoxEmpty.new()
 	empty.content_margin_left = 10
@@ -95,6 +96,7 @@ func _gui_input(event: InputEvent) -> void:
 			_moving = true
 			get_parent().grab_focus()
 			_drag_delta = Vector2.ZERO
+			_drag_mouse_origin = (get_parent().get_local_mouse_position()+get_parent().scroll_offset)/get_parent().zoom
 			_drag_positions.clear()
 			for sibling in get_parent().get_children():
 				if sibling is GraphNode and sibling.selected:
@@ -107,14 +109,16 @@ func _gui_input(event: InputEvent) -> void:
 			get_parent().end_node_move.emit()
 			accept_event()
 	elif event is InputEventMouseMotion and _moving:
-		_drag_delta += event.relative / get_parent().zoom
+		_drag_delta = (get_parent().get_local_mouse_position()+get_parent().scroll_offset)/get_parent().zoom - _drag_mouse_origin
 		for view in _drag_positions:
 			var target: Vector2 = _drag_positions[view] + _drag_delta
-			view.position_offset = target.snapped(Vector2.ONE * get_parent().snapping_distance)
+			view.position_offset = target.snapped(Vector2.ONE * get_parent().snapping_distance) if get_parent().snapping_enabled else target
 		accept_event()
 
 
 func update_signals(high: bool, values: Array[bool], connected: Array[bool]) -> void:
+	if connected.size() != get_input_port_count():
+		return
 	var signature := str([high, values, connected])
 	if signature == _last_state:
 		return
@@ -139,11 +143,11 @@ func _draw() -> void:
 	if component.is_empty():
 		return
 	var kind := String(component["kind"])
-	if kind == "SENSOR" or kind in ["DIESEL", "PADAM"]:
+	if kind == "SENSOR" or kind in ["DIESEL", "PADAM", "OUTPUT"]:
 		draw_style_box(_selected_face if selected else _face, Rect2(Vector2(3, 1), size - Vector2(6, 2)))
-		var caption := String(component["sensor"]) if kind == "SENSOR" else kind
+		var caption := String(component["sensor"]) if kind == "SENSOR" else (String(component["sensor"]) if kind == "OUTPUT" else kind)
 		CircuitSkin.text(self, caption, Rect2(12, 5, size.x - 24, 24), 10, UI.INK, true)
-		var subtitle := ("1 / AKTIF" if output_high else "0 / NONAKTIF") if kind == "SENSOR" else (("PLTD " if kind == "DIESEL" else "DUSUN 3 ") + ("ON" if output_high else "OFF"))
+		var subtitle := ("1 / AKTIF" if output_high else "0 / NONAKTIF") if kind == "SENSOR" else (("PERINTAH " if kind == "OUTPUT" else ("PLTD " if kind == "DIESEL" else "DUSUN 3 ")) + ("ON" if output_high else "OFF"))
 		CircuitSkin.text(self, subtitle, Rect2(12, 29, size.x - 24, 17), 8, UI.TEAL if output_high else UI.MUTED, true)
 		return
 	var bounds := Rect2(20, 2, size.x - 40, size.y - 4)

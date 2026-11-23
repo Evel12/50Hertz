@@ -58,6 +58,7 @@ static func make_binary(gate_type: String, child_a: Dictionary, child_b: Diction
 static func reset_memory(node: Dictionary) -> void:
 	if node.is_empty():
 		return
+	node.erase("_tick")
 	node["latch_q"] = false
 	node["val"] = false
 	var a_node: Dictionary = node.get("a", {})
@@ -69,6 +70,10 @@ static func reset_memory(node: Dictionary) -> void:
 
 
 static func evaluate(node: Dictionary, sensors: Dictionary, update_latches: bool) -> bool:
+	if update_latches and node.get("_tick", -1) == sensors.get("_tick", -2):
+		return bool(node.get("val", false))
+	if update_latches and sensors.has("_tick"):
+		node["_tick"] = sensors["_tick"]
 	if node.is_empty():
 		return false
 
@@ -97,6 +102,10 @@ static func evaluate(node: Dictionary, sensors: Dictionary, update_latches: bool
 			var va: bool = evaluate(a_node, sensors, update_latches)
 			var vb: bool = evaluate(b_node, sensors, update_latches)
 			result = va or vb
+		"XOR", "NAND", "NOR":
+			var va := evaluate(node.get("a", {}), sensors, update_latches)
+			var vb := evaluate(node.get("b", {}), sensors, update_latches)
+			result = (va != vb) if ntype == "XOR" else (not (va and vb) if ntype == "NAND" else not (va or vb))
 		"LATCH":
 			var s_node: Dictionary = node.get("a", {})
 			var r_node: Dictionary = node.get("b", {})
@@ -137,7 +146,7 @@ static func _count_gates(node: Dictionary, visited: Dictionary) -> int:
 			return 0
 		visited[id] = true
 	var kind := String(node.get("type", "SENSOR"))
-	var total := 1 if kind in ["NOT", "AND", "OR", "LATCH"] else 0
+	var total := 1 if kind in ["NOT", "AND", "OR", "XOR", "NAND", "NOR", "LATCH"] else 0
 	total += _count_gates(node.get("a", {}), visited)
 	total += _count_gates(node.get("b", {}), visited)
 	return total
@@ -184,7 +193,7 @@ static func swap_gate_type(node: Dictionary, new_type: String) -> void:
 	node["latch_q"] = false
 	node["a"] = cur_a
 
-	if new_type == "AND" or new_type == "OR" or new_type == "LATCH":
+	if new_type in ["AND", "OR", "XOR", "NAND", "NOR", "LATCH"]:
 		if cur_b.is_empty():
 			cur_b = make_sensor("NONE")
 		node["b"] = cur_b
@@ -200,7 +209,7 @@ static func wrap_sensor_with_gate(node: Dictionary, gate_type: String) -> void:
 	node["sensor"] = "NONE"
 	node["latch_q"] = false
 	node["a"] = child_a
-	if gate_type == "AND" or gate_type == "OR" or gate_type == "LATCH":
+	if gate_type in ["AND", "OR", "XOR", "NAND", "NOR", "LATCH"]:
 		node["b"] = make_sensor("NONE")
 	else:
 		node["b"] = {}
@@ -217,7 +226,7 @@ static func replace_with_sensor(node: Dictionary, sensor_name: String) -> void:
 static func get_sensor_info(sensor_name: String) -> Dictionary:
 	match sensor_name:
 		"SIANG":
-			return {"label": "SIANG", "desc": "Matahari cukup terang untuk PLTS"}
+			return {"label": "SIANG", "desc": "Periode siang pada jam simulasi; tidak bergantung pada awan"}
 		"MENDUNG":
 			return {"label": "MENDUNG", "desc": "Awan tebal menutupi PLTS"}
 		"F_RENDAH":
@@ -227,4 +236,4 @@ static func get_sensor_info(sensor_name: String) -> Dictionary:
 		"DIESEL_PENUH":
 			return {"label": "DIESEL_PENUH", "desc": "Diesel sudah di kapasitas penuh"}
 		_:
-			return {"label": "+ pilih sensor", "desc": "Slot sensor kosong"}
+			return {"label": sensor_name if sensor_name != "NONE" else "+ pilih sensor", "desc": "Fakta kondisi / permintaan operator"}
